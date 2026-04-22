@@ -5,9 +5,9 @@ WatchConfig config;
 
 // 0: Inner, 1: Middle, 2: Outer
 RingDef rings[3] = {
-  { .width = 70, .height = 90, .corner_radius = 15, .num_items = 12 }, // Inner (1-12 hours)
-  { .width = 110, .height = 130, .corner_radius = 20, .num_items = 6 }, // Middle (0-5 tens minutes)
-  { .width = 150, .height = 170, .corner_radius = 25, .num_items = 10 } // Outer (0-9 ones minutes)
+  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 12 }, // Inner (1-12 hours)
+  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 }, // Middle (0-5 tens minutes)
+  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 } // Outer (0-9 ones minutes)
 };
 
 static Window *s_main_window;
@@ -115,7 +115,7 @@ void init_default_config() {
   config.middle_ring_color = GColorBlack;
   config.outer_ring_color = GColorBlack;
   config.highlight_fill_color = GColorRed;
-  config.line_color = GColorWhite;
+  config.line_color = GColorDarkGray;
   config.number_color = GColorWhite;
   config.center_text_color = GColorWhite;
   config.highlight_position = POS_RIGHT;
@@ -221,9 +221,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
 
-  center.y -= 25;
-
-  graphics_context_set_stroke_width(ctx, 2);
+  graphics_context_set_stroke_width(ctx, 1);
   graphics_context_set_stroke_color(ctx, config.line_color);
 
   // Draw Rings Fills and Borders
@@ -544,7 +542,6 @@ static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
   GPoint center = grect_center_point(&bounds);
-  center.y -= 25;
 
   s_canvas_layer = layer_create(bounds);
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
