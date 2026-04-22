@@ -270,7 +270,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
     GPoint pt = get_point_on_rounded_rect(rings[0].width, rings[0].height, rings[0].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", num);
-    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 10, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 12, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   for(int i=0; i<rings[1].num_items; i++) {
@@ -281,7 +281,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
     GPoint pt = get_point_on_rounded_rect(rings[1].width, rings[1].height, rings[1].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", num);
-    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 10, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 12, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   for(int i=0; i<rings[2].num_items; i++) {
@@ -292,7 +292,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
     GPoint pt = get_point_on_rounded_rect(rings[2].width, rings[2].height, rings[2].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", num);
-    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 10, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 12, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   // Draw Center Text (HH:MM)
