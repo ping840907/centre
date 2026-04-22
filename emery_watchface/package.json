@@ -29,7 +29,8 @@
       "NUMBER_COLOR",
       "CENTER_TEXT_COLOR",
       "HIGHLIGHT_POSITION",
-      "ANIMATION_TOGGLE"
+      "ANIMATION_TOGGLE",
+      "THEME"
     ],
     "resources": {
       "media": []

@@ -8,6 +8,28 @@ module.exports = [
     "items": [
       {
         "type": "heading",
+        "defaultValue": "Theme"
+      },
+      {
+        "type": "select",
+        "messageKey": "THEME",
+        "defaultValue": "0",
+        "label": "Color Theme",
+        "options": [
+          { "label": "Custom / Default", "value": "0" },
+          { "label": "Ocean Blue", "value": "1" },
+          { "label": "Forest Green", "value": "2" },
+          { "label": "Cyberpunk", "value": "3" }
+        ],
+        "description": "Selecting a theme will override individual color settings."
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
         "defaultValue": "Colors"
       },
       {
@@ -80,7 +102,7 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Animations"
+        "defaultValue": "Settings"
       },
       {
         "type": "toggle",
