@@ -1,0 +1,23 @@
+<<<<<<< SEARCH
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  current_month = tick_time->tm_mon + 1;
+  current_day = tick_time->tm_mday;
+  current_weekday = tick_time->tm_wday;
+  update_time();
+}
+=======
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  current_month = tick_time->tm_mon + 1;
+  current_day = tick_time->tm_mday;
+  current_weekday = tick_time->tm_wday;
+
+  // Set initial anim angles to match start load state (Top Position)
+  anim_hour_angle = 0;
+  anim_min_tens_angle = 0;
+  anim_min_ones_angle = 0;
+
+  update_time();
+}
+>>>>>>> REPLACE

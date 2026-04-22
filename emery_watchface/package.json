@@ -1,0 +1,38 @@
+{
+  "name": "emery_watchface",
+  "author": "MakeAwesomeHappen",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "pebble": {
+    "displayName": "emery_watchface",
+    "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "INNER_RING_COLOR",
+      "MIDDLE_RING_COLOR",
+      "OUTER_RING_COLOR",
+      "HIGHLIGHT_FILL_COLOR",
+      "LINE_COLOR",
+      "NUMBER_COLOR",
+      "CENTER_TEXT_COLOR",
+      "HIGHLIGHT_POSITION",
+      "ANIMATION_TOGGLE"
+    ],
+    "resources": {
+      "media": []
+    }
+  }
+}
