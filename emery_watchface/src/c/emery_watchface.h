@@ -14,6 +14,7 @@
 // Config
 typedef struct {
   GColor inner_ring_color;
+  GColor sub_inner_ring_color;
   GColor middle_ring_color;
   GColor outer_ring_color;
   GColor highlight_fill_color;
@@ -37,7 +38,7 @@ typedef struct {
   int num_items;
 } RingDef;
 
-extern RingDef rings[3];
+extern RingDef rings[4];
 
 // Math utilities
 GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle);

@@ -3,11 +3,12 @@
 
 WatchConfig config;
 
-// 0: Inner, 1: Middle, 2: Outer
-RingDef rings[3] = {
-  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 12 }, // Inner (1-12 hours)
-  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 }, // Middle (0-5 tens minutes)
-  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 } // Outer (0-9 ones minutes)
+// 0: Innermost, 1: Sub-Inner, 2: Middle, 3: Outer
+RingDef rings[4] = {
+  { .width = 60,  .height = 90,  .corner_radius = 10, .num_items = 3 },  // Innermost (0-2 hour tens)
+  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 10 }, // Sub-Inner (0-9 hour ones)
+  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 },  // Middle (0-5 minute tens)
+  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 }  // Outer (0-9 minute ones)
 };
 
 static Window *s_main_window;
@@ -17,7 +18,8 @@ static Layer *s_day_layer;
 static Layer *s_weekday_layer;
 
 // State variables for time
-static int current_hour = 0;
+static int current_hour_tens = 0;
+static int current_hour_ones = 0;
 static int current_minute_tens = 0;
 static int current_minute_ones = 0;
 
@@ -27,11 +29,13 @@ static int current_weekday = 0; // 0=Sun
 static int battery_level = 100;
 
 // Animation values (TRIG_MAX_ANGLE represents a full loop)
-static int32_t anim_hour_angle = 0;
+static int32_t anim_hour_tens_angle = 0;
+static int32_t anim_hour_ones_angle = 0;
 static int32_t anim_min_tens_angle = 0;
 static int32_t anim_min_ones_angle = 0;
 
-static PropertyAnimation *s_hour_anim = NULL;
+static PropertyAnimation *s_hour_tens_anim = NULL;
+static PropertyAnimation *s_hour_ones_anim = NULL;
 static PropertyAnimation *s_min_tens_anim = NULL;
 static PropertyAnimation *s_min_ones_anim = NULL;
 
@@ -62,7 +66,8 @@ static int16_t anim_month_y = 24;
 static int16_t anim_day_y = 24;
 static int16_t anim_weekday_y = 24;
 
-static int32_t target_hour_angle = 0;
+static int32_t target_hour_tens_angle = 0;
+static int32_t target_hour_ones_angle = 0;
 static int32_t target_min_tens_angle = 0;
 static int32_t target_min_ones_angle = 0;
 
@@ -112,6 +117,7 @@ static GFont s_date_font;
 // Config Init
 void init_default_config() {
   config.inner_ring_color = GColorBlack;
+  config.sub_inner_ring_color = GColorBlack;
   config.middle_ring_color = GColorBlack;
   config.outer_ring_color = GColorBlack;
   config.highlight_fill_color = GColorRed;
@@ -225,8 +231,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, config.line_color);
 
   // Draw Rings Fills and Borders
-  GColor ring_colors[3] = {config.inner_ring_color, config.middle_ring_color, config.outer_ring_color};
-  for(int i=2; i>=0; i--) { // draw outer first
+  GColor ring_colors[4] = {config.inner_ring_color, config.sub_inner_ring_color, config.middle_ring_color, config.outer_ring_color};
+  for(int i=3; i>=0; i--) { // draw outer first
     GRect rect = GRect(center.x - rings[i].width/2, center.y - rings[i].height/2, rings[i].width, rings[i].height);
     graphics_context_set_fill_color(ctx, ring_colors[i]);
     graphics_fill_rect(ctx, rect, rings[i].corner_radius, GCornersAll);
@@ -242,7 +248,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // Draw highlight boxes
   graphics_context_set_fill_color(ctx, config.highlight_fill_color);
-  for(int i=0; i<3; i++) {
+  for(int i=0; i<4; i++) {
     GPoint pt = get_point_on_rounded_rect(rings[i].width, rings[i].height, rings[i].corner_radius, target_angle);
     GRect hl_rect = GRect(center.x + pt.x - 12, center.y + pt.y - 12, 24, 24);
     graphics_fill_rect(ctx, hl_rect, 0, GCornerNone);
@@ -253,18 +259,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, config.number_color);
   char buf[8];
 
+  // Ring 0: Hour tens (0-2)
   for(int i=0; i<rings[0].num_items; i++) {
-    int num = i + 1; // 1 to 12
-    if (clock_is_24h_style()) {
-      time_t temp = time(NULL);
-      struct tm *tick_time = localtime(&temp);
-      if (tick_time->tm_hour >= 12) {
-        // PM sequence: 13, 14, ..., 23, 0
-        num = i + 13;
-        if (num >= 24) num -= 24;
-      }
-    }
-    int32_t base_angle = anim_hour_angle;
+    int num = i;
+    int32_t base_angle = anim_hour_tens_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[0].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
@@ -273,9 +271,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
+  // Ring 1: Hour ones (0-9)
   for(int i=0; i<rings[1].num_items; i++) {
-    int num = i; // 0 to 5
-    int32_t base_angle = anim_min_tens_angle;
+    int num = i;
+    int32_t base_angle = anim_hour_ones_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[1].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
@@ -284,9 +283,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
+  // Ring 2: Minute tens (0-5)
   for(int i=0; i<rings[2].num_items; i++) {
-    int num = i; // 0 to 9
-    int32_t base_angle = anim_min_ones_angle;
+    int num = i;
+    int32_t base_angle = anim_min_tens_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[2].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
@@ -295,13 +295,21 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
+  // Ring 3: Minute ones (0-9)
+  for(int i=0; i<rings[3].num_items; i++) {
+    int num = i;
+    int32_t base_angle = anim_min_ones_angle;
+    int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[3].num_items;
+    int32_t angle = target_angle + item_offset - base_angle;
+
+    GPoint pt = get_point_on_rounded_rect(rings[3].width, rings[3].height, rings[3].corner_radius, angle);
+    snprintf(buf, sizeof(buf), "%d", num);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+
   // Draw Center Text (HH:MM)
   char time_buf[6];
-  int display_hour = current_hour;
-  if (!clock_is_24h_style()) {
-    if(display_hour == 0) display_hour = 12;
-    if(display_hour > 12) display_hour -= 12;
-  }
+  int display_hour = current_hour_tens * 10 + current_hour_ones;
   snprintf(time_buf, sizeof(time_buf), clock_is_24h_style() ? "%02d:%02d" : "%d:%02d", display_hour, current_minute_tens*10 + current_minute_ones);
   graphics_context_set_text_color(ctx, config.center_text_color);
   graphics_draw_text(ctx, time_buf, s_time_font, GRect(center.x - 40, center.y - 20, 80, 40), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -348,6 +356,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   while(t != NULL) {
     if(t->key == MESSAGE_KEY_INNER_RING_COLOR) {
       config.inner_ring_color = GColorFromHEX(t->value->int32);
+    } else if(t->key == MESSAGE_KEY_SUB_INNER_RING_COLOR) {
+      config.sub_inner_ring_color = GColorFromHEX(t->value->int32);
     } else if(t->key == MESSAGE_KEY_MIDDLE_RING_COLOR) {
       config.middle_ring_color = GColorFromHEX(t->value->int32);
     } else if(t->key == MESSAGE_KEY_OUTER_RING_COLOR) {
@@ -376,42 +386,32 @@ static void update_time() {
   struct tm *tick_time = localtime(&temp);
 
   int hour = tick_time->tm_hour;
-  if (clock_is_24h_style()) {
-    int h_idx;
-    if (hour >= 12) {
-       // 12PM is index 11 (number 0), 13PM is index 0 (number 13)
-       if (hour == 12) h_idx = 11;
-       else h_idx = hour - 13;
-    } else {
-       // 0AM is index 11 (number 0), 1AM is index 0 (number 1)
-       if (hour == 0) h_idx = 11;
-       else h_idx = hour - 1;
-    }
-    target_hour_angle = (h_idx * TRIG_MAX_ANGLE) / rings[0].num_items;
+  if (!clock_is_24h_style()) {
+    if(hour == 0) hour = 12;
+    if(hour > 12) hour -= 12;
   }
 
-  // Normalize current angles to [0, TRIG_MAX_ANGLE) to ensure forward animation
-  anim_hour_angle %= TRIG_MAX_ANGLE;
-  if (anim_hour_angle < 0) anim_hour_angle += TRIG_MAX_ANGLE;
-  anim_min_tens_angle %= TRIG_MAX_ANGLE;
-  if (anim_min_tens_angle < 0) anim_min_tens_angle += TRIG_MAX_ANGLE;
-  anim_min_ones_angle %= TRIG_MAX_ANGLE;
-  if (anim_min_ones_angle < 0) anim_min_ones_angle += TRIG_MAX_ANGLE;
-
-  current_hour = tick_time->tm_hour;
+  current_hour_tens = hour / 10;
+  current_hour_ones = hour % 10;
 
   int min = tick_time->tm_min;
   current_minute_tens = min / 10;
   current_minute_ones = min % 10;
 
-  if (!clock_is_24h_style()) {
-    int h = current_hour;
-    if(h == 0) h = 12;
-    if(h > 12) h -= 12;
-    target_hour_angle = ((h - 1) * TRIG_MAX_ANGLE) / rings[0].num_items;
-  }
-  target_min_tens_angle = (current_minute_tens * TRIG_MAX_ANGLE) / rings[1].num_items;
-  target_min_ones_angle = (current_minute_ones * TRIG_MAX_ANGLE) / rings[2].num_items;
+  target_hour_tens_angle = (current_hour_tens * TRIG_MAX_ANGLE) / rings[0].num_items;
+  target_hour_ones_angle = (current_hour_ones * TRIG_MAX_ANGLE) / rings[1].num_items;
+  target_min_tens_angle = (current_minute_tens * TRIG_MAX_ANGLE) / rings[2].num_items;
+  target_min_ones_angle = (current_minute_ones * TRIG_MAX_ANGLE) / rings[3].num_items;
+
+  // Normalize current angles to [0, TRIG_MAX_ANGLE) to ensure forward animation
+  anim_hour_tens_angle %= TRIG_MAX_ANGLE;
+  if (anim_hour_tens_angle < 0) anim_hour_tens_angle += TRIG_MAX_ANGLE;
+  anim_hour_ones_angle %= TRIG_MAX_ANGLE;
+  if (anim_hour_ones_angle < 0) anim_hour_ones_angle += TRIG_MAX_ANGLE;
+  anim_min_tens_angle %= TRIG_MAX_ANGLE;
+  if (anim_min_tens_angle < 0) anim_min_tens_angle += TRIG_MAX_ANGLE;
+  anim_min_ones_angle %= TRIG_MAX_ANGLE;
+  if (anim_min_ones_angle < 0) anim_min_ones_angle += TRIG_MAX_ANGLE;
 
   static int prev_month = -1;
   static int prev_day = -1;
@@ -432,27 +432,37 @@ static void update_time() {
     if(target_min_tens_angle < anim_min_tens_angle) {
       target_min_tens_angle += TRIG_MAX_ANGLE;
     }
-    if(target_hour_angle < anim_hour_angle) {
-      target_hour_angle += TRIG_MAX_ANGLE;
+    if(target_hour_ones_angle < anim_hour_ones_angle) {
+      target_hour_ones_angle += TRIG_MAX_ANGLE;
+    }
+    if(target_hour_tens_angle < anim_hour_tens_angle) {
+      target_hour_tens_angle += TRIG_MAX_ANGLE;
     }
 
-    if(s_hour_anim) animation_unschedule((Animation*)s_hour_anim);
-    s_hour_anim = create_anim(&angle_anim_impl, anim_hour_angle, target_hour_angle, &anim_hour_angle, &s_hour_anim);
-    animation_set_duration((Animation*)s_hour_anim, 500);
-    animation_set_curve((Animation*)s_hour_anim, AnimationCurveEaseInOut);
-    animation_schedule((Animation*)s_hour_anim);
+    if(s_hour_tens_anim) animation_unschedule((Animation*)s_hour_tens_anim);
+    s_hour_tens_anim = create_anim(&angle_anim_impl, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, &s_hour_tens_anim);
+    animation_set_duration((Animation*)s_hour_tens_anim, 500);
+    animation_set_curve((Animation*)s_hour_tens_anim, AnimationCurveEaseInOut);
+    animation_schedule((Animation*)s_hour_tens_anim);
+
+    if(s_hour_ones_anim) animation_unschedule((Animation*)s_hour_ones_anim);
+    s_hour_ones_anim = create_anim(&angle_anim_impl, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, &s_hour_ones_anim);
+    animation_set_duration((Animation*)s_hour_ones_anim, 500);
+    animation_set_delay((Animation*)s_hour_ones_anim, 150);
+    animation_set_curve((Animation*)s_hour_ones_anim, AnimationCurveEaseInOut);
+    animation_schedule((Animation*)s_hour_ones_anim);
 
     if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
     s_min_tens_anim = create_anim(&angle_anim_impl, anim_min_tens_angle, target_min_tens_angle, &anim_min_tens_angle, &s_min_tens_anim);
     animation_set_duration((Animation*)s_min_tens_anim, 500);
-    animation_set_delay((Animation*)s_min_tens_anim, 200);
+    animation_set_delay((Animation*)s_min_tens_anim, 300);
     animation_set_curve((Animation*)s_min_tens_anim, AnimationCurveEaseInOut);
     animation_schedule((Animation*)s_min_tens_anim);
 
     if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
     s_min_ones_anim = create_anim(&angle_anim_impl, anim_min_ones_angle, target_min_ones_angle, &anim_min_ones_angle, &s_min_ones_anim);
     animation_set_duration((Animation*)s_min_ones_anim, 500);
-    animation_set_delay((Animation*)s_min_ones_anim, 400);
+    animation_set_delay((Animation*)s_min_ones_anim, 450);
     animation_set_curve((Animation*)s_min_ones_anim, AnimationCurveEaseInOut);
     animation_schedule((Animation*)s_min_ones_anim);
 
@@ -491,7 +501,8 @@ static void update_time() {
     anim_month_y = 2;
     anim_day_y = 2;
     anim_weekday_y = 2;
-    anim_hour_angle = target_hour_angle;
+    anim_hour_tens_angle = target_hour_tens_angle;
+    anim_hour_ones_angle = target_hour_ones_angle;
     anim_min_tens_angle = target_min_tens_angle;
     anim_min_ones_angle = target_min_ones_angle;
     layer_mark_dirty(s_canvas_layer);
@@ -580,7 +591,8 @@ static void main_window_load(Window *window) {
   current_weekday = tick_time->tm_wday;
 
   // Set initial anim angles to 0 for the first animation on load
-  anim_hour_angle = 0;
+  anim_hour_tens_angle = 0;
+  anim_hour_ones_angle = 0;
   anim_min_tens_angle = 0;
   anim_min_ones_angle = 0;
 
@@ -588,7 +600,8 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window *window) {
-  if(s_hour_anim) animation_unschedule((Animation*)s_hour_anim);
+  if(s_hour_tens_anim) animation_unschedule((Animation*)s_hour_tens_anim);
+  if(s_hour_ones_anim) animation_unschedule((Animation*)s_hour_ones_anim);
   if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
   if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
   if(s_month_anim) animation_unschedule((Animation*)s_month_anim);

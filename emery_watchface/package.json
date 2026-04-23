@@ -22,6 +22,7 @@
     },
     "messageKeys": [
       "INNER_RING_COLOR",
+      "SUB_INNER_RING_COLOR",
       "MIDDLE_RING_COLOR",
       "OUTER_RING_COLOR",
       "HIGHLIGHT_FILL_COLOR",

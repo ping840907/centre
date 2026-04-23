@@ -36,6 +36,12 @@ module.exports = [
         "type": "color",
         "messageKey": "INNER_RING_COLOR",
         "defaultValue": "0x000000",
+        "label": "Innermost Ring Fill Color"
+      },
+      {
+        "type": "color",
+        "messageKey": "SUB_INNER_RING_COLOR",
+        "defaultValue": "0x000000",
         "label": "Inner Ring Fill Color"
       },
       {
