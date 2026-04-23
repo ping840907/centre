@@ -21,6 +21,7 @@ typedef struct {
   GColor line_color;
   GColor number_color;
   GColor center_text_color;
+  GColor highlight_number_color;
   int highlight_position;
   bool animation_toggle;
 } WatchConfig;

@@ -16,6 +16,13 @@ static Layer *s_canvas_layer;
 static Layer *s_month_layer;
 static Layer *s_day_layer;
 static Layer *s_weekday_layer;
+static Layer *s_battery_layer;
+
+// English Month Names
+static const char *const MONTH_NAMES[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
 
 // State variables for time
 static int current_hour_tens = 0;
@@ -56,6 +63,7 @@ static void anim_stopped_handler(Animation *animation, bool finished, void *cont
 
   if (anim_ptr && *anim_ptr == (PropertyAnimation *)animation) {
     *anim_ptr = NULL;
+    layer_mark_dirty(s_canvas_layer);
   }
   free(ctx);
   free(ptr_tuple);
@@ -84,9 +92,25 @@ static void date_anim_update(Animation *anim, const AnimationProgress progress) 
   AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
   int32_t current = ctx->from + ((ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX;
   *ctx->target_var = current;
-  if (ctx->target_var == (int32_t*)&anim_month_y) layer_mark_dirty(s_month_layer);
-  else if (ctx->target_var == (int32_t*)&anim_day_y) layer_mark_dirty(s_day_layer);
-  else if (ctx->target_var == (int32_t*)&anim_weekday_y) layer_mark_dirty(s_weekday_layer);
+
+  Layer *window_layer = window_get_root_layer(s_main_window);
+  GRect bounds = layer_get_bounds(window_layer);
+  GPoint center = grect_center_point(&bounds);
+  int start_y = center.y - 39;
+
+  if (ctx->target_var == (int32_t*)&anim_month_y) {
+    GRect frame = layer_get_frame(s_month_layer);
+    frame.origin.y = start_y + (int16_t)current - 3;
+    layer_set_frame(s_month_layer, frame);
+  } else if (ctx->target_var == (int32_t*)&anim_day_y) {
+    GRect frame = layer_get_frame(s_day_layer);
+    frame.origin.y = start_y + 20 + (int16_t)current - 3;
+    layer_set_frame(s_day_layer, frame);
+  } else if (ctx->target_var == (int32_t*)&anim_weekday_y) {
+    GRect frame = layer_get_frame(s_weekday_layer);
+    frame.origin.y = start_y + 40 + (int16_t)current - 3;
+    layer_set_frame(s_weekday_layer, frame);
+  }
 }
 
 static const AnimationImplementation angle_anim_impl = { .update = angle_anim_update };
@@ -110,7 +134,6 @@ static PropertyAnimation* create_anim(const AnimationImplementation *impl, int32
 }
 
 // Font
-static GFont s_time_font;
 static GFont s_number_font;
 static GFont s_date_font;
 
@@ -122,8 +145,9 @@ void init_default_config() {
   config.outer_ring_color = GColorBlack;
   config.highlight_fill_color = GColorRed;
   config.line_color = GColorDarkGray;
-  config.number_color = GColorWhite;
+  config.number_color = GColorLightGray;
   config.center_text_color = GColorWhite;
+  config.highlight_number_color = GColorWhite;
   config.highlight_position = POS_RIGHT;
   config.animation_toggle = true;
 }
@@ -261,92 +285,56 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // Ring 0: Hour tens (0-2)
   for(int i=0; i<rings[0].num_items; i++) {
-    int num = i;
     int32_t base_angle = anim_hour_tens_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[0].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
+    graphics_context_set_text_color(ctx, (s_hour_tens_anim == NULL && i == current_hour_tens) ? config.highlight_number_color : config.number_color);
+
     GPoint pt = get_point_on_rounded_rect(rings[0].width, rings[0].height, rings[0].corner_radius, angle);
-    snprintf(buf, sizeof(buf), "%d", num);
+    snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   // Ring 1: Hour ones (0-9)
   for(int i=0; i<rings[1].num_items; i++) {
-    int num = i;
     int32_t base_angle = anim_hour_ones_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[1].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
+    graphics_context_set_text_color(ctx, (s_hour_ones_anim == NULL && i == current_hour_ones) ? config.highlight_number_color : config.number_color);
+
     GPoint pt = get_point_on_rounded_rect(rings[1].width, rings[1].height, rings[1].corner_radius, angle);
-    snprintf(buf, sizeof(buf), "%d", num);
+    snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   // Ring 2: Minute tens (0-5)
   for(int i=0; i<rings[2].num_items; i++) {
-    int num = i;
     int32_t base_angle = anim_min_tens_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[2].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
+    graphics_context_set_text_color(ctx, (s_min_tens_anim == NULL && i == current_minute_tens) ? config.highlight_number_color : config.number_color);
+
     GPoint pt = get_point_on_rounded_rect(rings[2].width, rings[2].height, rings[2].corner_radius, angle);
-    snprintf(buf, sizeof(buf), "%d", num);
+    snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
   // Ring 3: Minute ones (0-9)
   for(int i=0; i<rings[3].num_items; i++) {
-    int num = i;
     int32_t base_angle = anim_min_ones_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[3].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
+    graphics_context_set_text_color(ctx, (s_min_ones_anim == NULL && i == current_minute_ones) ? config.highlight_number_color : config.number_color);
+
     GPoint pt = get_point_on_rounded_rect(rings[3].width, rings[3].height, rings[3].corner_radius, angle);
-    snprintf(buf, sizeof(buf), "%d", num);
+    snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - 15, center.y + pt.y - 13, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 
-  // Draw Center Text (HH:MM)
-  char time_buf[6];
-  int display_hour = current_hour_tens * 10 + current_hour_ones;
-  snprintf(time_buf, sizeof(time_buf), clock_is_24h_style() ? "%02d:%02d" : "%d:%02d", display_hour, current_minute_tens*10 + current_minute_ones);
-  graphics_context_set_text_color(ctx, config.center_text_color);
-  graphics_draw_text(ctx, time_buf, s_time_font, GRect(center.x - 40, center.y - 20, 80, 40), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-  // Draw Date Section (Month, Day, Weekday)
-  int date_y = center.y + 75;
-  int box_w = 30;
-  int box_h = 24;
-  int gap = 10;
-  int total_w = box_w * 3 + gap * 2;
-  int start_x = center.x - total_w / 2;
-
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_context_set_stroke_color(ctx, config.line_color);
-
-  for(int i=0; i<3; i++) {
-    graphics_draw_rect(ctx, GRect(start_x + i * (box_w + gap), date_y, box_w, box_h));
-  }
-
-  // Draw Battery
-  int batt_y = date_y + box_h + 6;
-  GRect batt_rect = GRect(center.x - 15, batt_y, 30, 14);
-  graphics_draw_rect(ctx, batt_rect);
-  graphics_draw_rect(ctx, GRect(center.x + 15, batt_y + 3, 3, 8));
-
-  // Battery Fill & Text
-  int fill_w = (26 * battery_level) / 100;
-  if (battery_level <= 20) {
-    graphics_context_set_fill_color(ctx, GColorRed);
-  } else {
-    graphics_context_set_fill_color(ctx, config.line_color);
-  }
-  graphics_fill_rect(ctx, GRect(center.x - 13, batt_y + 2, fill_w, 10), 0, GCornerNone);
-
-  char batt_buf[8];
-  snprintf(batt_buf, sizeof(batt_buf), "%d%%", battery_level);
-  graphics_draw_text(ctx, batt_buf, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(center.x + 20, batt_y - 3, 30, 20), GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 }
 
 static void update_time();
@@ -370,6 +358,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       config.number_color = GColorFromHEX(t->value->int32);
     } else if(t->key == MESSAGE_KEY_CENTER_TEXT_COLOR) {
       config.center_text_color = GColorFromHEX(t->value->int32);
+    } else if(t->key == MESSAGE_KEY_HIGHLIGHT_NUMBER_COLOR) {
+      config.highlight_number_color = GColorFromHEX(t->value->int32);
     } else if(t->key == MESSAGE_KEY_HIGHLIGHT_POSITION) {
       config.highlight_position = atoi(t->value->cstring);
     } else if(t->key == MESSAGE_KEY_ANIMATION_TOGGLE) {
@@ -466,7 +456,7 @@ static void update_time() {
     animation_set_curve((Animation*)s_min_ones_anim, AnimationCurveEaseInOut);
     animation_schedule((Animation*)s_min_ones_anim);
 
-    int32_t target_y = 2;
+    int32_t target_y = 3;
 
     if (month_changed) {
       if(s_month_anim) animation_unschedule((Animation*)s_month_anim);
@@ -498,9 +488,9 @@ static void update_time() {
     }
 
   } else {
-    anim_month_y = 2;
-    anim_day_y = 2;
-    anim_weekday_y = 2;
+    anim_month_y = 3;
+    anim_day_y = 3;
+    anim_weekday_y = 3;
     anim_hour_tens_angle = target_hour_tens_angle;
     anim_hour_ones_angle = target_hour_ones_angle;
     anim_min_tens_angle = target_min_tens_angle;
@@ -514,7 +504,7 @@ static void update_time() {
 
 static void battery_callback(BatteryChargeState state) {
   battery_level = state.charge_percent;
-  layer_mark_dirty(s_canvas_layer);
+  layer_mark_dirty(s_battery_layer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -525,28 +515,51 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
 }
 
+static void draw_battery_icon(GContext *ctx, GRect rect, GColor color) {
+  graphics_context_set_stroke_color(ctx, color);
+  graphics_draw_rect(ctx, GRect(rect.origin.x, rect.origin.y, rect.size.w - 3, rect.size.h));
+  graphics_context_set_fill_color(ctx, color);
+  graphics_fill_rect(ctx, GRect(rect.origin.x + rect.size.w - 3, rect.origin.y + rect.size.h/4, 3, rect.size.h/2), 0, GCornerNone);
+}
+
 static void month_update_proc(Layer *layer, GContext *ctx) {
-  char buf[4];
-  snprintf(buf, sizeof(buf), "%d", current_month);
-  graphics_context_set_text_color(ctx, config.line_color);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_month_y, 30, 24), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  GRect bounds = layer_get_bounds(layer);
+  const char *name = MONTH_NAMES[(current_month - 1) % 12];
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx, name, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
   char buf[4];
   snprintf(buf, sizeof(buf), "%d", current_day);
-  graphics_context_set_text_color(ctx, config.line_color);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_day_y, 30, 24), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void weekday_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
   char buf[8];
   strftime(buf, sizeof(buf), "%a", tick_time);
-  // Strftime might return capitalized "Sun", "Mon"... we keep it for consistency with system localization
-  graphics_context_set_text_color(ctx, config.line_color);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_weekday_y, 30, 24), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+}
+
+static void battery_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  draw_battery_icon(ctx, GRect(0, 0, bounds.size.w, 18), config.line_color);
+
+  // Fill battery level
+  int fill_w = ((bounds.size.w - 7) * battery_level) / 100;
+  graphics_context_set_fill_color(ctx, (battery_level <= 20) ? GColorRed : config.line_color);
+  graphics_fill_rect(ctx, GRect(2, 2, fill_w, 14), 0, GCornerNone);
+
+  char buf[8];
+  snprintf(buf, sizeof(buf), "%d%%", battery_level);
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w - 3, 18), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void main_window_load(Window *window) {
@@ -558,31 +571,38 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
 
-  int date_y = center.y + 75;
-  int box_w = 30;
-  int box_h = 24;
-  int gap = 10;
-  int total_w = box_w * 3 + gap * 2;
-  int start_x = center.x - total_w / 2;
+  // Vertical layout in the center
+  // Fit within 60x90
+  int item_w = 50;
+  int item_h = 18;
+  int spacing = 2;
+  int total_height = item_h * 4 + spacing * 3;
+  int start_y = center.y - total_height / 2;
 
-  s_month_layer = layer_create(GRect(start_x, date_y, box_w, box_h));
+  s_month_layer = layer_create(GRect(center.x - item_w / 2, start_y, item_w, item_h));
   layer_set_clips(s_month_layer, true);
   layer_set_update_proc(s_month_layer, month_update_proc);
   layer_add_child(s_canvas_layer, s_month_layer);
 
-  s_day_layer = layer_create(GRect(start_x + box_w + gap, date_y, box_w, box_h));
+  s_day_layer = layer_create(GRect(center.x - item_w / 2, start_y + (item_h + spacing), item_w, item_h));
   layer_set_clips(s_day_layer, true);
   layer_set_update_proc(s_day_layer, day_update_proc);
   layer_add_child(s_canvas_layer, s_day_layer);
 
-  s_weekday_layer = layer_create(GRect(start_x + 2*(box_w + gap), date_y, box_w, box_h));
+  s_weekday_layer = layer_create(GRect(center.x - item_w / 2, start_y + 2 * (item_h + spacing), item_w, item_h));
   layer_set_clips(s_weekday_layer, true);
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_time_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  s_battery_layer = layer_create(GRect(center.x - item_w / 2, start_y + 3 * (item_h + spacing), item_w, item_h));
+  layer_set_clips(s_battery_layer, true);
+  layer_set_update_proc(s_battery_layer, battery_update_proc);
+  layer_add_child(s_canvas_layer, s_battery_layer);
+
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
-  s_date_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  s_date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+
+  battery_callback(battery_state_service_peek());
 
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
@@ -611,6 +631,7 @@ static void main_window_unload(Window *window) {
   layer_destroy(s_month_layer);
   layer_destroy(s_day_layer);
   layer_destroy(s_weekday_layer);
+  layer_destroy(s_battery_layer);
   layer_destroy(s_canvas_layer);
 }
 

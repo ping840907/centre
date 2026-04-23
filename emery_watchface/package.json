@@ -31,7 +31,8 @@
       "CENTER_TEXT_COLOR",
       "HIGHLIGHT_POSITION",
       "ANIMATION_TOGGLE",
-      "THEME"
+      "THEME",
+      "HIGHLIGHT_NUMBER_COLOR"
     ],
     "resources": {
       "media": []

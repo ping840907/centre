@@ -79,6 +79,12 @@ module.exports = [
         "messageKey": "CENTER_TEXT_COLOR",
         "defaultValue": "0xFFFFFF",
         "label": "Center Time Text Color"
+      },
+      {
+        "type": "color",
+        "messageKey": "HIGHLIGHT_NUMBER_COLOR",
+        "defaultValue": "0xFFFFFF",
+        "label": "Highlight Number Color"
       }
     ]
   },
