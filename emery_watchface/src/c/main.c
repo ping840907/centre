@@ -510,14 +510,21 @@ static void update_time() {
   }
 }
 
+static char s_battery_buffer[8];
+static char s_day_buffer[4];
+
 static void battery_callback(BatteryChargeState state) {
   battery_level = state.charge_percent;
+  snprintf(s_battery_buffer, sizeof(s_battery_buffer), "%d%%", battery_level);
   layer_mark_dirty(s_battery_layer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   current_month = tick_time->tm_mon + 1;
-  current_day = tick_time->tm_mday;
+  if (current_day != tick_time->tm_mday) {
+    current_day = tick_time->tm_mday;
+    snprintf(s_day_buffer, sizeof(s_day_buffer), "%d", current_day);
+  }
   current_weekday = tick_time->tm_wday;
 
   update_time();
@@ -539,20 +546,16 @@ static void month_update_proc(Layer *layer, GContext *ctx) {
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  char buf[4];
-  snprintf(buf, sizeof(buf), "%d", current_day);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, s_day_buffer, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void weekday_update_proc(Layer *layer, GContext *ctx) {
+  static const char *const WEEKDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
   GRect bounds = layer_get_bounds(layer);
-  time_t temp = time(NULL);
-  struct tm *tick_time = localtime(&temp);
-  char buf[8];
-  strftime(buf, sizeof(buf), "%a", tick_time);
+  const char *name = WEEKDAY_NAMES[current_weekday % 7];
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, name, s_date_font, GRect(0, -4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
@@ -564,10 +567,8 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, (battery_level <= 20) ? GColorRed : config.line_color);
   graphics_fill_rect(ctx, GRect(2, 2, fill_w, 14), 0, GCornerNone);
 
-  char buf[8];
-  snprintf(buf, sizeof(buf), "%d%%", battery_level);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w - 3, 18), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, s_battery_buffer, s_date_font, GRect(0, -4, bounds.size.w - 3, 18), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void main_window_load(Window *window) {
