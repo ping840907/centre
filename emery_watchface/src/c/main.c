@@ -49,7 +49,6 @@ static PropertyAnimation *s_min_ones_anim = NULL;
 static PropertyAnimation *s_month_anim = NULL;
 static PropertyAnimation *s_day_anim = NULL;
 static PropertyAnimation *s_weekday_anim = NULL;
-static PropertyAnimation *s_battery_anim = NULL;
 
 typedef struct {
   int32_t from;
@@ -73,7 +72,6 @@ static void anim_stopped_handler(Animation *animation, bool finished, void *cont
 static int16_t anim_month_y = 24;
 static int16_t anim_day_y = 24;
 static int16_t anim_weekday_y = 24;
-static int16_t anim_battery_y = 24;
 
 static int32_t target_hour_tens_angle = 0;
 static int32_t target_hour_ones_angle = 0;
@@ -96,7 +94,6 @@ static void date_anim_update(Animation *anim, const AnimationProgress progress) 
   if (ctx->target_var == (int32_t*)&anim_month_y) layer_mark_dirty(s_month_layer);
   else if (ctx->target_var == (int32_t*)&anim_day_y) layer_mark_dirty(s_day_layer);
   else if (ctx->target_var == (int32_t*)&anim_weekday_y) layer_mark_dirty(s_weekday_layer);
-  else if (ctx->target_var == (int32_t*)&anim_battery_y) layer_mark_dirty(s_battery_layer);
 }
 
 static const AnimationImplementation angle_anim_impl = { .update = angle_anim_update };
@@ -467,20 +464,10 @@ static void update_time() {
       animation_schedule((Animation*)s_weekday_anim);
     }
 
-    // Always animate battery when anything changes for consistency or on battery event
-    if(s_battery_anim) animation_unschedule((Animation*)s_battery_anim);
-    anim_battery_y = 24;
-    s_battery_anim = create_anim(&date_anim_impl, (int32_t)anim_battery_y, target_y, (int32_t*)&anim_battery_y, &s_battery_anim);
-    animation_set_duration((Animation*)s_battery_anim, 400);
-    animation_set_delay((Animation*)s_battery_anim, 600);
-    animation_set_curve((Animation*)s_battery_anim, AnimationCurveEaseOut);
-    animation_schedule((Animation*)s_battery_anim);
-
   } else {
     anim_month_y = 3;
     anim_day_y = 3;
     anim_weekday_y = 3;
-    anim_battery_y = 3;
     anim_hour_tens_angle = target_hour_tens_angle;
     anim_hour_ones_angle = target_hour_ones_angle;
     anim_min_tens_angle = target_min_tens_angle;
@@ -515,43 +502,41 @@ static void draw_battery_icon(GContext *ctx, GRect rect, GColor color) {
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   const char *name = MONTH_NAMES[(current_month - 1) % 12];
-  graphics_context_set_text_color(ctx, config.line_color);
+  graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx, name, s_date_font, GRect(0, anim_month_y - 4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  draw_battery_icon(ctx, GRect(0, anim_day_y, bounds.size.w, 20), config.line_color);
   char buf[4];
   snprintf(buf, sizeof(buf), "%d", current_day);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_day_y - 4, bounds.size.w - 3, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_day_y - 4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void weekday_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  draw_battery_icon(ctx, GRect(0, anim_weekday_y, bounds.size.w, 20), config.line_color);
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
   char buf[8];
   strftime(buf, sizeof(buf), "%a", tick_time);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_weekday_y - 4, bounds.size.w - 3, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_weekday_y - 4, bounds.size.w, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  draw_battery_icon(ctx, GRect(0, anim_battery_y, bounds.size.w, 20), config.line_color);
+  draw_battery_icon(ctx, GRect(0, 0, bounds.size.w, 18), config.line_color);
 
   // Fill battery level
   int fill_w = ((bounds.size.w - 7) * battery_level) / 100;
   graphics_context_set_fill_color(ctx, (battery_level <= 20) ? GColorRed : config.line_color);
-  graphics_fill_rect(ctx, GRect(2, anim_battery_y + 2, fill_w, 16), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(2, 2, fill_w, 14), 0, GCornerNone);
 
   char buf[8];
   snprintf(buf, sizeof(buf), "%d%%", battery_level);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_battery_y - 4, bounds.size.w - 3, 20), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, -4, bounds.size.w - 3, 18), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void main_window_load(Window *window) {
@@ -564,9 +549,10 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, s_canvas_layer);
 
   // Vertical layout in the center
+  // Fit within 60x90
   int item_w = 50;
-  int item_h = 26;
-  int spacing = 4;
+  int item_h = 18;
+  int spacing = 2;
   int total_height = item_h * 4 + spacing * 3;
   int start_y = center.y - total_height / 2;
 
@@ -594,6 +580,8 @@ static void main_window_load(Window *window) {
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
   s_date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
+  battery_callback(battery_state_service_peek());
+
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
   current_month = tick_time->tm_mon + 1;
@@ -617,7 +605,6 @@ static void main_window_unload(Window *window) {
   if(s_month_anim) animation_unschedule((Animation*)s_month_anim);
   if(s_day_anim) animation_unschedule((Animation*)s_day_anim);
   if(s_weekday_anim) animation_unschedule((Animation*)s_weekday_anim);
-  if(s_battery_anim) animation_unschedule((Animation*)s_battery_anim);
 
   layer_destroy(s_month_layer);
   layer_destroy(s_day_layer);
