@@ -65,13 +65,13 @@ module.exports = [
       {
         "type": "color",
         "messageKey": "LINE_COLOR",
-        "defaultValue": "0xFFFFFF",
+        "defaultValue": "0x555555",
         "label": "Line Color"
       },
       {
         "type": "color",
         "messageKey": "NUMBER_COLOR",
-        "defaultValue": "0xFFFFFF",
+        "defaultValue": "0xAAAAAA",
         "label": "Number Color"
       },
       {

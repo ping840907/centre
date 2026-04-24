@@ -16,32 +16,38 @@ Pebble.addEventListener('webviewclosed', function(e) {
   var theme = parseInt(dict['THEME'] || dict[Pebble.Enums.THEME] || 0);
   if (theme > 0) {
     var themes = {
-      1: { // Ocean
+      1: { // Ocean Blue
         'INNER_RING_COLOR': '0x000055',
+        'SUB_INNER_RING_COLOR': '0x000080',
         'MIDDLE_RING_COLOR': '0x0000AA',
         'OUTER_RING_COLOR': '0x0000FF',
         'HIGHLIGHT_FILL_COLOR': '0x00FFFF',
         'LINE_COLOR': '0xFFFFFF',
         'NUMBER_COLOR': '0xFFFFFF',
-        'CENTER_TEXT_COLOR': '0xFFFFFF'
+        'CENTER_TEXT_COLOR': '0xFFFFFF',
+        'HIGHLIGHT_NUMBER_COLOR': '0x00FFFF'
       },
-      2: { // Forest
+      2: { // Forest Green
         'INNER_RING_COLOR': '0x005500',
+        'SUB_INNER_RING_COLOR': '0x007700',
         'MIDDLE_RING_COLOR': '0x00AA00',
         'OUTER_RING_COLOR': '0x55FF00',
         'HIGHLIGHT_FILL_COLOR': '0xFFFF00',
         'LINE_COLOR': '0xFFFFFF',
         'NUMBER_COLOR': '0xFFFFFF',
-        'CENTER_TEXT_COLOR': '0xFFFFFF'
+        'CENTER_TEXT_COLOR': '0xFFFFFF',
+        'HIGHLIGHT_NUMBER_COLOR': '0xFFFF00'
       },
       3: { // Cyberpunk
         'INNER_RING_COLOR': '0x000000',
+        'SUB_INNER_RING_COLOR': '0x2B0055',
         'MIDDLE_RING_COLOR': '0x550055',
         'OUTER_RING_COLOR': '0xAA00AA',
         'HIGHLIGHT_FILL_COLOR': '0xFF00FF',
         'LINE_COLOR': '0xFFFF00',
         'NUMBER_COLOR': '0xFFFF00',
-        'CENTER_TEXT_COLOR': '0xFFFF00'
+        'CENTER_TEXT_COLOR': '0xFFFF00',
+        'HIGHLIGHT_NUMBER_COLOR': '0xFF00FF'
       }
     };
 
