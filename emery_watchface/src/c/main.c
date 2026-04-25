@@ -100,7 +100,7 @@ static int32_t target_min_ones_angle = 0;
 static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
   void **ptr_tuple = (void **)animation_get_context(anim);
   AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
-  int32_t current = ctx->from + ((ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX;
+  int32_t current = ctx->from + (int32_t)(((int64_t)(ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX);
   *ctx->target_var = current;
   layer_mark_dirty(s_canvas_layer);
 }
@@ -164,6 +164,20 @@ static PropertyAnimation* create_anim(const AnimationImplementation *impl, int32
   return (PropertyAnimation*)anim;
 }
 
+// easeOutBack curve: overshoots by ~10% then springs back (c1=1.70158, c3=2.70158)
+static AnimationProgress inertia_curve(AnimationProgress linear) {
+  const int32_t M = ANIMATION_NORMALIZED_MAX;
+  int32_t t256 = (int32_t)((int64_t)linear * 256 / M);  // t * 256 ∈ [0, 256]
+  int32_t d = t256 - 256;                                 // (t-1)*256 ∈ [-256, 0]
+  int64_t d2 = (int64_t)d * d;
+  int64_t d3 = d2 * d;
+  // c1_s = round(1.70158 * 1024) = 1742, c3_s = round(2.70158 * 1024) = 2767
+  int64_t term2 = 1742LL * d2 / (1024 * 256);
+  int64_t term3 = 2767LL * d3 / (1024LL * 256 * 256);
+  int64_t result256 = 256 + term2 + term3;
+  return (AnimationProgress)((int64_t)result256 * M / 256);
+}
+
 // Helper: schedule a ring rotation animation with NULL-safety
 static void schedule_ring_anim(PropertyAnimation **anim_ptr, int32_t from, int32_t to,
                                int32_t *target, uint32_t delay_ms) {
@@ -173,7 +187,11 @@ static void schedule_ring_anim(PropertyAnimation **anim_ptr, int32_t from, int32
   if (!*anim_ptr) return;
   animation_set_duration((Animation*)*anim_ptr, ANIM_DURATION_MS);
   if (delay_ms > 0) animation_set_delay((Animation*)*anim_ptr, delay_ms);
-  animation_set_curve((Animation*)*anim_ptr, AnimationCurveEaseInOut);
+  if (config.inertia_toggle) {
+    animation_set_custom_curve((Animation*)*anim_ptr, inertia_curve);
+  } else {
+    animation_set_curve((Animation*)*anim_ptr, AnimationCurveEaseInOut);
+  }
   animation_schedule((Animation*)*anim_ptr);
 }
 
@@ -204,6 +222,7 @@ void init_default_config() {
   config.highlight_number_color = GColorWhite;
   config.highlight_position   = POS_RIGHT;
   config.animation_toggle     = true;
+  config.inertia_toggle       = false;
 }
 
 // FIX: persist config across app restarts
@@ -387,6 +406,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_NUMBER_COLOR) config.highlight_number_color = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_POSITION)   config.highlight_position   = atoi(t->value->cstring);
     else if (t->key == MESSAGE_KEY_ANIMATION_TOGGLE)     config.animation_toggle     = t->value->int32 == 1;
+    else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
     t = dict_read_next(iterator);
   }
 

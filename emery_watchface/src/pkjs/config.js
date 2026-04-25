@@ -121,6 +121,12 @@ module.exports = [
         "messageKey": "ANIMATION_TOGGLE",
         "label": "Enable Animations",
         "defaultValue": true
+      },
+      {
+        "type": "toggle",
+        "messageKey": "INERTIA_TOGGLE",
+        "label": "Inertia Effect",
+        "defaultValue": false
       }
     ]
   },

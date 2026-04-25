@@ -1,6 +1,23 @@
 var Clay = require('pebble-clay');
 var clayConfig = require('./config');
-var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+
+var customFn = function() {
+  var animToggle = this.getItemByMessageKey('ANIMATION_TOGGLE');
+  var inertiaToggle = this.getItemByMessageKey('INERTIA_TOGGLE');
+
+  function syncInertia() {
+    if (animToggle.get()) {
+      inertiaToggle.show();
+    } else {
+      inertiaToggle.hide();
+    }
+  }
+
+  syncInertia();
+  animToggle.on('change', syncInertia);
+};
+
+var clay = new Clay(clayConfig, customFn, { autoHandleEvents: false });
 
 Pebble.addEventListener('showConfiguration', function(e) {
   Pebble.openURL(clay.generateUrl());

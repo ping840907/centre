@@ -24,6 +24,7 @@ typedef struct {
   GColor highlight_number_color;
   int highlight_position;
   bool animation_toggle;
+  bool inertia_toggle;
 } WatchConfig;
 
 extern WatchConfig config;
