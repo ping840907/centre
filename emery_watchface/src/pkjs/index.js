@@ -3,11 +3,11 @@ var clayConfig = require('./config');
 var customClay = require('./custom-clay');
 var clay = new Clay(clayConfig, customClay, { autoHandleEvents: false });
 
-Pebble.addEventListener('showConfiguration', function(e) {
+Pebble.addEventListener('showConfiguration', function (e) {
   Pebble.openURL(clay.generateUrl());
 });
 
-Pebble.addEventListener('webviewclosed', function(e) {
+Pebble.addEventListener('webviewclosed', function (e) {
   if (e && !e.response) {
     return;
   }
@@ -55,14 +55,23 @@ Pebble.addEventListener('webviewclosed', function(e) {
     var selectedTheme = themes[theme];
     if (selectedTheme) {
       for (var key in selectedTheme) {
-        dict[key] = parseInt(selectedTheme[key]);
+        // Use the numeric message key ID so we update the correct entry in the
+        // dict returned by clay.getSettings() (which uses numeric keys), rather
+        // than adding a separate string-keyed duplicate that may be ignored or
+        // sent twice.
+        var numericKey = Pebble.Enums[key];
+        if (numericKey !== undefined) {
+          dict[numericKey] = parseInt(selectedTheme[key]);
+        } else {
+          dict[key] = parseInt(selectedTheme[key]);
+        }
       }
     }
   }
 
-  Pebble.sendAppMessage(dict, function(e) {
+  Pebble.sendAppMessage(dict, function (e) {
     console.log('Sent config data to Pebble');
-  }, function(e) {
+  }, function (e) {
     console.log('Failed to send config data!');
     console.log(JSON.stringify(e));
   });
