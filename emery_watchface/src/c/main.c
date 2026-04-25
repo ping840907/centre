@@ -411,6 +411,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
 
   save_config();
+  layer_mark_dirty(s_canvas_layer);
+  layer_mark_dirty(s_month_layer);
+  layer_mark_dirty(s_day_layer);
+  layer_mark_dirty(s_weekday_layer);
+  layer_mark_dirty(s_battery_layer);
   update_time();
 }
 

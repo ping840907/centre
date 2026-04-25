@@ -71,7 +71,16 @@ Pebble.addEventListener('webviewclosed', function(e) {
     var selectedTheme = themes[theme];
     if (selectedTheme) {
       for (var key in selectedTheme) {
-        dict[key] = parseInt(selectedTheme[key]);
+        // Use the numeric message key ID so we update the correct entry in the
+        // dict returned by clay.getSettings() (which uses numeric keys), rather
+        // than adding a separate string-keyed duplicate that may be ignored or
+        // sent twice.
+        var numericKey = Pebble.Enums[key];
+        if (numericKey !== undefined) {
+          dict[numericKey] = parseInt(selectedTheme[key]);
+        } else {
+          dict[key] = parseInt(selectedTheme[key]);
+        }
       }
     }
   }
