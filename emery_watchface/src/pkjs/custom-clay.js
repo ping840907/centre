@@ -2,7 +2,7 @@ module.exports = function(minified) {
   var clayConfig = this;
 
   function toggleBounce() {
-    var bounceItem = clayConfig.getItemByMessageKey('BOUNCE_ANIMATION_TOGGLE');
+    var bounceItem = clayConfig.getItemByMessageKey('INERTIA_TOGGLE');
     if (bounceItem) {
       if (this.get()) {
         bounceItem.show();
