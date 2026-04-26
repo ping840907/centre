@@ -20,6 +20,7 @@
 #define CENTER_ITEM_W         50
 #define CENTER_ITEM_H         18
 #define CENTER_SPACING         2
+#define BATTERY_ICON_W        36   // narrower than CENTER_ITEM_W to clear inner-ring digits
 
 WatchConfig config;
 
@@ -599,7 +600,7 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_battery_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + 3 * step, CENTER_ITEM_W, CENTER_ITEM_H));
+  s_battery_layer = layer_create(GRect(center.x - BATTERY_ICON_W / 2, start_y + 3 * step, BATTERY_ICON_W, CENTER_ITEM_H));
   layer_set_clips(s_battery_layer, true);
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
