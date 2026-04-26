@@ -20,7 +20,7 @@
 #define CENTER_ITEM_W         50
 #define CENTER_ITEM_H         18
 #define CENTER_SPACING         2
-#define BATTERY_ICON_W        36   // narrower than CENTER_ITEM_W to clear inner-ring digits
+#define BATTERY_ICON_W        26   // narrower than CENTER_ITEM_W to clear inner-ring digits
 #define BATTERY_BODY_W        (BATTERY_ICON_W - 3)  // body only, excluding the nub
 #define BATTERY_ICON_H        12   // shorter than CENTER_ITEM_H; no text inside
 
