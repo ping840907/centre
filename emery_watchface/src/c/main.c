@@ -22,6 +22,7 @@
 #define CENTER_SPACING         2
 #define BATTERY_ICON_W        36   // narrower than CENTER_ITEM_W to clear inner-ring digits
 #define BATTERY_BODY_W        (BATTERY_ICON_W - 3)  // body only, excluding the nub
+#define BATTERY_ICON_H        12   // shorter than CENTER_ITEM_H; no text inside
 
 WatchConfig config;
 
@@ -503,14 +504,12 @@ static void update_time(void) {
   }
 }
 
-static char s_battery_buffer[8];
 static char s_day_buffer[4];
 static bool battery_is_charging = false;
 
 static void battery_callback(BatteryChargeState state) {
-  battery_level      = state.charge_percent;
+  battery_level       = state.charge_percent;
   battery_is_charging = state.is_charging;
-  snprintf(s_battery_buffer, sizeof(s_battery_buffer), "%d%%", battery_level);
   layer_mark_dirty(s_battery_layer);
 }
 
@@ -531,8 +530,6 @@ static void draw_battery_icon(GContext *ctx, GRect rect, GColor color) {
   graphics_fill_rect(ctx, GRect(rect.origin.x + rect.size.w - 3,
                                  rect.origin.y + rect.size.h/4, 3, rect.size.h/2), 0, GCornerNone);
 }
-
-// FIX: all date/battery text now uses config.center_text_color instead of hardcoded GColorWhite
 
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -562,20 +559,15 @@ static void weekday_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-  draw_battery_icon(ctx, GRect(0, 0, bounds.size.w, 18), config.center_text_color);
+  (void)layer;
+  draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_W, BATTERY_ICON_H), config.center_text_color);
 
   int fill_w = ((BATTERY_BODY_W - 4) * battery_level) / 100;
   GColor fill_color = battery_is_charging   ? GColorGreen
                     : (battery_level <= 20) ? GColorRed
                     :                         config.center_text_color;
   graphics_context_set_fill_color(ctx, fill_color);
-  graphics_fill_rect(ctx, GRect(2, 2, fill_w, 14), 0, GCornerNone);
-
-  graphics_context_set_text_color(ctx, config.center_text_color);
-  graphics_draw_text(ctx, s_battery_buffer, s_date_font,
-    GRect(0, -4, BATTERY_BODY_W, 18),
-    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_fill_rect(ctx, GRect(2, 2, fill_w, BATTERY_ICON_H - 4), 0, GCornerNone);
 }
 
 static void main_window_load(Window *window) {
@@ -606,7 +598,7 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_battery_layer = layer_create(GRect(center.x - BATTERY_BODY_W / 2, start_y + 3 * step, BATTERY_ICON_W, CENTER_ITEM_H));
+  s_battery_layer = layer_create(GRect(center.x - BATTERY_BODY_W / 2, start_y + 3 * step, BATTERY_ICON_W, BATTERY_ICON_H));
   layer_set_clips(s_battery_layer, true);
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
