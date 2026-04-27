@@ -54,24 +54,24 @@ RingDef rings[4] = {
 #elif defined(PBL_ROUND)
 // Chalk: outer r=76 keeps number glyphs (21×21 px, off=10) inside 180 px screen
 RingDef rings[4] = {
-  { .width = 68,  .height = 68,  .corner_radius = 24, .num_items = 3 },
-  { .width = 96,  .height = 96,  .corner_radius = 46, .num_items = 10 },
-  { .width = 124, .height = 124, .corner_radius = 62, .num_items = 6 },
-  { .width = 152, .height = 152, .corner_radius = 76, .num_items = 10 }
+  { .width = 82,  .height = 82,  .corner_radius = 24, .num_items = 3 },
+  { .width = 110, .height = 110,  .corner_radius = 46, .num_items = 10 },
+  { .width = 138, .height = 138, .corner_radius = 62, .num_items = 6 },
+  { .width = 166, .height = 166, .corner_radius = 76, .num_items = 10 }
 };
 #elif PBL_DISPLAY_WIDTH == 144
 RingDef rings[4] = {
-  { .width = 44,  .height = 66,  .corner_radius = 7,  .num_items = 3 },
-  { .width = 72,  .height = 96,  .corner_radius = 11, .num_items = 10 },
-  { .width = 100, .height = 124, .corner_radius = 15, .num_items = 6 },
-  { .width = 128, .height = 154, .corner_radius = 18, .num_items = 10 }
+  { .width = 46,  .height = 70,  .corner_radius = 7,  .num_items = 3 },
+  { .width = 74,  .height = 98,  .corner_radius = 11, .num_items = 10 },
+  { .width = 102, .height = 126, .corner_radius = 15, .num_items = 6 },
+  { .width = 130, .height = 154, .corner_radius = 18, .num_items = 10 }
 };
 #else
 RingDef rings[4] = {
-  { .width = 60,  .height = 90,  .corner_radius = 10, .num_items = 3 },
-  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 10 },
-  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 },
-  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 }
+  { .width = 60,  .height = 88,  .corner_radius = 10, .num_items = 3 },
+  { .width = 100, .height = 128, .corner_radius = 15, .num_items = 10 },
+  { .width = 140, .height = 168, .corner_radius = 20, .num_items = 6 },
+  { .width = 180, .height = 208, .corner_radius = 25, .num_items = 10 }
 };
 #endif
 
