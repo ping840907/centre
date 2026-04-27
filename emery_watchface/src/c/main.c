@@ -9,11 +9,11 @@
 #define ANIM_DELAY_STEP_MS    150
 
 // Drawing constants
-#define HIGHLIGHT_BOX_SIZE    24
-#define NUMBER_TEXT_W         30
-#define NUMBER_TEXT_H         20
-#define NUMBER_TEXT_OFF_X     15
-#define NUMBER_TEXT_OFF_Y     13
+#define HIGHLIGHT_BOX_SIZE    21
+#define NUMBER_TEXT_W         21
+#define NUMBER_TEXT_H         21
+#define NUMBER_TEXT_OFF_X     10
+#define NUMBER_TEXT_OFF_Y     10
 
 // Center info panel layout
 #define CENTER_ITEM_W         50
@@ -204,10 +204,10 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   // The π≈3.14 perimeter approximation shifts the 1/4- and 3/4-perimeter
   // positions by 1 px on smaller rings (0 & 1) but not on larger ones (2 & 3),
   // producing a visible misalignment whenever the highlight sits at those angles.
-  if (angle == 0)                        return GPoint(0,    -h/2);
-  if (angle == TRIG_MAX_ANGLE / 4)       return GPoint(w/2,  0);
-  if (angle == TRIG_MAX_ANGLE / 2)       return GPoint(0,     h/2);
-  if (angle == 3 * TRIG_MAX_ANGLE / 4)  return GPoint(-w/2, 0);
+  if (angle == 0)                        return GPoint(0,       -h/2);
+  if (angle == TRIG_MAX_ANGLE / 4)       return GPoint(w/2 - 1, 0);
+  if (angle == TRIG_MAX_ANGLE / 2)       return GPoint(0,       h/2 - 1);
+  if (angle == 3 * TRIG_MAX_ANGLE / 4)  return GPoint(-w/2,    0);
 
   int str_h = w - 2*r;
   int str_v = h - 2*r;
@@ -312,7 +312,7 @@ static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
                                           rings[ring_idx].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font,
-      GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y,
+      GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y - 2,
             NUMBER_TEXT_W, NUMBER_TEXT_H),
       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
