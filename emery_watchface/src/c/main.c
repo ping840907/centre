@@ -312,7 +312,7 @@ static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
                                           rings[ring_idx].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font,
-      GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y,
+      GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y - 2,
             NUMBER_TEXT_W, NUMBER_TEXT_H),
       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
