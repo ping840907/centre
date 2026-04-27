@@ -34,6 +34,12 @@ module.exports = [
       },
       {
         "type": "color",
+        "messageKey": "BACKGROUND_COLOR",
+        "defaultValue": "0x000000",
+        "label": "Background Color"
+      },
+      {
+        "type": "color",
         "messageKey": "INNER_RING_COLOR",
         "defaultValue": "0x000000",
         "label": "Innermost Ring Fill Color"

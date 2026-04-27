@@ -2,6 +2,8 @@
 
 A watch face for the Pebble Emery smartwatch. Time is displayed as four concentric rounded rectangles — each ring rotates to show one digit of the current hour and minute.
 
+> **Note:** This project was developed with AI assistance (Claude by Anthropic).
+
 ---
 
 ## How It Works
@@ -23,7 +25,7 @@ Numbers are arranged around each ring. When the time changes, the ring rotates t
 
 - **Smooth animations** — rings rotate with a natural inertia effect (slight overshoot, then spring back)
 - **Staggered motion** — each ring starts 150 ms after the previous one for a flowing look
-- **Full color customization** — independently set colors for each ring, the highlight box, numbers, and center text
+- **Full color customization** — independently set colors for each ring, the highlight box, numbers, center text, and background
 - **Preset themes** — choose from Ocean Blue, Forest Green, or Cyberpunk, or build your own palette
 - **Highlight position** — place the reading marker at the top, bottom, left, or right
 - **Battery indicator** — color-coded bar turns red below 20 % and green while charging
@@ -39,6 +41,7 @@ Open the Pebble app on your phone, go to **My Watchfaces → Continuum → Setti
 
 | Setting | What it affects |
 |---------|-----------------|
+| Background Color | The area outside and behind all rings |
 | Innermost Ring Fill | Background of the innermost ring |
 | Inner Ring Fill | Background of the second ring |
 | Middle Ring Fill | Background of the third ring |
@@ -98,4 +101,10 @@ continuum/
 
 ## License
 
-MIT
+MIT — Copyright (c) 2026 Sloth8497. See [LICENSE](LICENSE) for the full text.
+
+---
+
+## AI Assistance
+
+This project was developed with the assistance of **Claude** (by Anthropic). The watch face logic, animation system, geometry calculations, and configuration pipeline were written collaboratively between the human author and the AI. All code has been reviewed and curated by the project author.

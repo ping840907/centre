@@ -18,6 +18,7 @@ typedef struct {
   GColor number_color;
   GColor center_text_color;
   GColor highlight_number_color;
+  GColor background_color;
   int highlight_position;
   bool animation_toggle;
   bool inertia_toggle;

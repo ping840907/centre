@@ -34,7 +34,8 @@
       "INERTIA_TOGGLE",
       "BATTERY_TOGGLE",
       "THEME",
-      "HIGHLIGHT_NUMBER_COLOR"
+      "HIGHLIGHT_NUMBER_COLOR",
+      "BACKGROUND_COLOR"
     ],
     "resources": {
       "media": []
