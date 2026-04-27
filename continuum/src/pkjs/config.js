@@ -1,7 +1,7 @@
 module.exports = [
   {
     "type": "heading",
-    "defaultValue": "Emery Watchface Configuration"
+    "defaultValue": "Continuum Configuration"
   },
   {
     "type": "section",

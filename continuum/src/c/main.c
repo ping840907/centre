@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "emery_watchface.h"
+#include "continuum.h"
 
 // Persist storage key
 #define PERSIST_KEY_CONFIG    1

@@ -1,5 +1,5 @@
 {
-  "name": "emery_watchface",
+  "name": "continuum",
   "author": "MakeAwesomeHappen",
   "version": "1.0.0",
   "keywords": [
@@ -10,7 +10,7 @@
     "pebble-clay": "^1.0.4"
   },
   "pebble": {
-    "displayName": "emery_watchface",
+    "displayName": "Continuum",
     "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
     "sdkVersion": "3",
     "enableMultiJS": true,
