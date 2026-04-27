@@ -5,6 +5,7 @@ module.exports = [
   },
   {
     "type": "section",
+    "id": "section-theme",
     "items": [
       {
         "type": "heading",
@@ -27,6 +28,7 @@ module.exports = [
   },
   {
     "type": "section",
+    "id": "section-colors",
     "items": [
       {
         "type": "heading",
