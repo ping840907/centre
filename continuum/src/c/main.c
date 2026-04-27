@@ -8,30 +8,84 @@
 #define ANIM_DURATION_MS      500
 #define ANIM_DELAY_STEP_MS    150
 
-// Drawing constants
+// Drawing constants — scaled per platform
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+// Gabbro (260×260): ~1.3× scale-up from the Emery/Chalk baseline
+#define HIGHLIGHT_BOX_SIZE    28
+#define NUMBER_TEXT_W         28
+#define NUMBER_TEXT_H         30
+#define NUMBER_TEXT_OFF_X     14
+#define NUMBER_TEXT_OFF_Y     15
+#define CENTER_ITEM_W         68
+#define CENTER_ITEM_H         24
+#define CENTER_SPACING         2
+#define BATTERY_ICON_W        34
+#define BATTERY_ICON_H        16
+#elif PBL_DISPLAY_WIDTH == 144
+// Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
 #define HIGHLIGHT_BOX_SIZE    21
 #define NUMBER_TEXT_W         21
 #define NUMBER_TEXT_H         21
 #define NUMBER_TEXT_OFF_X     10
 #define NUMBER_TEXT_OFF_Y     10
-
-// Center info panel layout
+#define CENTER_ITEM_W         40
+#define CENTER_ITEM_H         18
+#define CENTER_SPACING         2
+#define BATTERY_ICON_W        26
+#define BATTERY_ICON_H        12
+#else
+// Chalk (180×180) / Emery (200×228): original sizes
+#define HIGHLIGHT_BOX_SIZE    21
+#define NUMBER_TEXT_W         21
+#define NUMBER_TEXT_H         21
+#define NUMBER_TEXT_OFF_X     10
+#define NUMBER_TEXT_OFF_Y     10
 #define CENTER_ITEM_W         50
 #define CENTER_ITEM_H         18
 #define CENTER_SPACING         2
-#define BATTERY_ICON_W        26   // narrower than CENTER_ITEM_W to clear inner-ring digits
-#define BATTERY_BODY_W        (BATTERY_ICON_W - 3)  // body only, excluding the nub
-#define BATTERY_ICON_H        12   // shorter than CENTER_ITEM_H; no text inside
+#define BATTERY_ICON_W        26
+#define BATTERY_ICON_H        12
+#endif
+#define BATTERY_BODY_W  (BATTERY_ICON_W - 3)  // body only, excluding the nub
 
 WatchConfig config;
 
 // 0: Innermost, 1: Sub-Inner, 2: Middle, 3: Outer
+// Gabbro (260×260 round): large circular rings — width==height, corner_radius==width/2
+// Chalk (180×180 round): smaller circular rings
+// Aplite/Diorite (144×168): proportionally scaled-down rounded-rect rings
+// Emery (200×228): original sizes
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+// Gabbro: outer r=110 keeps number glyphs (28×30 px, off=14/15) inside 260 px screen
 RingDef rings[4] = {
-  { .width = 60,  .height = 90,  .corner_radius = 10, .num_items = 3 },  // Hour tens (0-2)
-  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 10 }, // Hour ones (0-9)
-  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 },  // Minute tens (0-5)
-  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 }  // Minute ones (0-9)
+  { .width = 72,  .height = 72,  .corner_radius = 36,  .num_items = 3 },
+  { .width = 120, .height = 120, .corner_radius = 60,  .num_items = 10 },
+  { .width = 172, .height = 172, .corner_radius = 86,  .num_items = 6 },
+  { .width = 220, .height = 220, .corner_radius = 110, .num_items = 10 }
 };
+#elif defined(PBL_ROUND)
+// Chalk: outer r=76 keeps number glyphs (21×21 px, off=10) inside 180 px screen
+RingDef rings[4] = {
+  { .width = 48,  .height = 48,  .corner_radius = 24, .num_items = 3 },
+  { .width = 92,  .height = 92,  .corner_radius = 46, .num_items = 10 },
+  { .width = 124, .height = 124, .corner_radius = 62, .num_items = 6 },
+  { .width = 152, .height = 152, .corner_radius = 76, .num_items = 10 }
+};
+#elif PBL_DISPLAY_WIDTH == 144
+RingDef rings[4] = {
+  { .width = 44,  .height = 66,  .corner_radius = 7,  .num_items = 3 },
+  { .width = 72,  .height = 96,  .corner_radius = 11, .num_items = 10 },
+  { .width = 100, .height = 124, .corner_radius = 15, .num_items = 6 },
+  { .width = 128, .height = 154, .corner_radius = 18, .num_items = 10 }
+};
+#else
+RingDef rings[4] = {
+  { .width = 60,  .height = 90,  .corner_radius = 10, .num_items = 3 },
+  { .width = 100, .height = 130, .corner_radius = 15, .num_items = 10 },
+  { .width = 140, .height = 170, .corner_radius = 20, .num_items = 6 },
+  { .width = 180, .height = 210, .corner_radius = 25, .num_items = 10 }
+};
+#endif
 
 static Window *s_main_window;
 static Layer *s_canvas_layer;
@@ -170,20 +224,36 @@ static GFont s_number_font;
 static GFont s_date_font;
 
 void init_default_config() {
-  config.inner_ring_color     = GColorBlack;
-  config.sub_inner_ring_color = GColorBlack;
-  config.middle_ring_color    = GColorBlack;
-  config.outer_ring_color     = GColorBlack;
-  config.highlight_fill_color = GColorRed;
-  config.line_color           = GColorDarkGray;
-  config.number_color         = GColorLightGray;
-  config.center_text_color    = GColorWhite;
-  config.highlight_number_color = GColorWhite;
-  config.background_color     = GColorBlack;
   config.highlight_position   = POS_RIGHT;
   config.animation_toggle     = true;
   config.inertia_toggle       = true;
   config.battery_toggle       = true;
+  config.invert_bw            = false;
+
+#ifdef PBL_COLOR
+  config.inner_ring_color       = GColorBlack;
+  config.sub_inner_ring_color   = GColorBlack;
+  config.middle_ring_color      = GColorBlack;
+  config.outer_ring_color       = GColorBlack;
+  config.highlight_fill_color   = GColorRed;
+  config.line_color             = GColorDarkGray;
+  config.number_color           = GColorLightGray;
+  config.center_text_color      = GColorWhite;
+  config.highlight_number_color = GColorWhite;
+  config.background_color       = GColorBlack;
+#else
+  // B&W: colours are ignored at render time; store sensible values anyway
+  config.inner_ring_color       = GColorBlack;
+  config.sub_inner_ring_color   = GColorBlack;
+  config.middle_ring_color      = GColorBlack;
+  config.outer_ring_color       = GColorBlack;
+  config.highlight_fill_color   = GColorWhite;
+  config.line_color             = GColorWhite;
+  config.number_color           = GColorWhite;
+  config.center_text_color      = GColorWhite;
+  config.highlight_number_color = GColorBlack;
+  config.background_color       = GColorBlack;
+#endif
 }
 
 // FIX: persist config across app restarts
@@ -298,6 +368,16 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   return GPoint(x, y);
 }
 
+// Point on a perfect circle of given radius at the given angle (0 = top, clockwise)
+GPoint get_point_on_circle(int radius, int32_t angle) {
+  angle = angle % TRIG_MAX_ANGLE;
+  if (angle < 0) angle += TRIG_MAX_ANGLE;
+  return GPoint(
+    (sin_lookup(angle) * radius) / TRIG_MAX_RATIO,
+    -(cos_lookup(angle) * radius) / TRIG_MAX_RATIO
+  );
+}
+
 // FIX: shared helper replaces four nearly-identical ring drawing loops
 static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
                               int32_t ring_anim_angle, int current_digit,
@@ -308,9 +388,22 @@ static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / n;
     int32_t angle = target_angle + item_offset - ring_anim_angle;
     bool is_current = (!is_animating && i == current_digit);
+
+#ifdef PBL_COLOR
     graphics_context_set_text_color(ctx, is_current ? config.highlight_number_color : config.number_color);
+#else
+    // B&W: current digit shown in bg color so it reads against the filled highlight marker
+    GColor bw_fg = config.invert_bw ? GColorBlack : GColorWhite;
+    GColor bw_bg = config.invert_bw ? GColorWhite : GColorBlack;
+    graphics_context_set_text_color(ctx, is_current ? bw_bg : bw_fg);
+#endif
+
+#ifdef PBL_ROUND
+    GPoint pt = get_point_on_circle(rings[ring_idx].width / 2, angle);
+#else
     GPoint pt = get_point_on_rounded_rect(rings[ring_idx].width, rings[ring_idx].height,
                                           rings[ring_idx].corner_radius, angle);
+#endif
     snprintf(buf, sizeof(buf), "%d", i);
     graphics_draw_text(ctx, buf, s_number_font,
       GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y - 2,
@@ -323,31 +416,61 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
 
-  graphics_context_set_fill_color(ctx, config.background_color);
-  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_context_set_stroke_color(ctx, config.line_color);
-
+  // Determine effective colors (B&W platforms ignore config colors)
+#ifdef PBL_COLOR
+  GColor bg_col       = config.background_color;
+  GColor line_col     = config.line_color;
+  GColor hl_fill_col  = config.highlight_fill_color;
   GColor ring_colors[4] = {
     config.inner_ring_color, config.sub_inner_ring_color,
     config.middle_ring_color, config.outer_ring_color
   };
+#else
+  GColor bw_fg = config.invert_bw ? GColorBlack : GColorWhite;
+  GColor bw_bg = config.invert_bw ? GColorWhite : GColorBlack;
+  GColor bg_col       = bw_bg;
+  GColor line_col     = bw_fg;
+  GColor hl_fill_col  = bw_fg;
+  GColor ring_colors[4] = { bw_bg, bw_bg, bw_bg, bw_bg };
+#endif
+
+  graphics_context_set_fill_color(ctx, bg_col);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+  graphics_context_set_stroke_width(ctx, 1);
+
+  // Draw rings outer-to-inner so each inner ring paints over the previous fill
   for (int i = 3; i >= 0; i--) {
+    graphics_context_set_fill_color(ctx, ring_colors[i]);
+    graphics_context_set_stroke_color(ctx, line_col);
+#ifdef PBL_ROUND
+    // Circular rings for round displays
+    graphics_fill_circle(ctx, center, rings[i].width / 2);
+    graphics_draw_circle(ctx, center, rings[i].width / 2);
+#else
     GRect rect = GRect(center.x - rings[i].width/2, center.y - rings[i].height/2,
                        rings[i].width, rings[i].height);
-    graphics_context_set_fill_color(ctx, ring_colors[i]);
     graphics_fill_rect(ctx, rect, rings[i].corner_radius, GCornersAll);
     graphics_draw_round_rect(ctx, rect, rings[i].corner_radius);
+#endif
   }
 
+  // Highlight position angle
   int32_t target_angle = 0;
   if      (config.highlight_position == POS_RIGHT)  target_angle = TRIG_MAX_ANGLE / 4;
   else if (config.highlight_position == POS_BOTTOM) target_angle = TRIG_MAX_ANGLE / 2;
   else if (config.highlight_position == POS_LEFT)   target_angle = 3 * TRIG_MAX_ANGLE / 4;
 
-  graphics_context_set_fill_color(ctx, config.highlight_fill_color);
+  // Draw highlight markers at the read position on each ring
+  graphics_context_set_fill_color(ctx, hl_fill_col);
+  graphics_context_set_stroke_color(ctx, line_col);
   for (int i = 0; i < 4; i++) {
+#ifdef PBL_ROUND
+    GPoint pt = get_point_on_circle(rings[i].width / 2, target_angle);
+    GPoint hl_center = GPoint(center.x + pt.x, center.y + pt.y);
+    graphics_fill_circle(ctx, hl_center, HIGHLIGHT_BOX_SIZE / 2);
+    graphics_draw_circle(ctx, hl_center, HIGHLIGHT_BOX_SIZE / 2);
+#else
     GPoint pt = get_point_on_rounded_rect(rings[i].width, rings[i].height,
                                           rings[i].corner_radius, target_angle);
     GRect hl = GRect(center.x + pt.x - HIGHLIGHT_BOX_SIZE/2,
@@ -355,6 +478,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      HIGHLIGHT_BOX_SIZE, HIGHLIGHT_BOX_SIZE);
     graphics_fill_rect(ctx, hl, 0, GCornerNone);
     graphics_draw_rect(ctx, hl);
+#endif
   }
 
   draw_ring_numbers(ctx, center, 0, anim_hour_tens_angle, current_hour_tens, s_hour_tens_anim != NULL, target_angle);
@@ -406,6 +530,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_ANIMATION_TOGGLE)     config.animation_toggle     = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_BATTERY_TOGGLE)       config.battery_toggle       = t->value->int32 == 1;
+    else if (t->key == MESSAGE_KEY_INVERT_BW)            config.invert_bw            = t->value->int32 == 1;
     t = dict_read_next(iterator);
   }
 
@@ -514,10 +639,19 @@ static void draw_battery_icon(GContext *ctx, GRect rect, GColor color) {
                                  rect.origin.y + rect.size.h/4, 3, rect.size.h/2), 0, GCornerNone);
 }
 
+// Returns effective text/icon color for center panel (B&W ignores config.center_text_color)
+static GColor center_text_color(void) {
+#ifdef PBL_COLOR
+  return config.center_text_color;
+#else
+  return config.invert_bw ? GColorBlack : GColorWhite;
+#endif
+}
+
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   const char *name = MONTH_NAMES[(current_month - 1) % 12];
-  graphics_context_set_text_color(ctx, config.center_text_color);
+  graphics_context_set_text_color(ctx, center_text_color());
   graphics_draw_text(ctx, name, s_date_font,
     GRect(0, -4, bounds.size.w, bounds.size.h),
     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -525,7 +659,7 @@ static void month_update_proc(Layer *layer, GContext *ctx) {
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_text_color(ctx, config.center_text_color);
+  graphics_context_set_text_color(ctx, center_text_color());
   graphics_draw_text(ctx, s_day_buffer, s_date_font,
     GRect(0, -4, bounds.size.w, bounds.size.h),
     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -535,7 +669,7 @@ static void weekday_update_proc(Layer *layer, GContext *ctx) {
   static const char *const WEEKDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
   GRect bounds = layer_get_bounds(layer);
   const char *name = WEEKDAY_NAMES[current_weekday % 7];
-  graphics_context_set_text_color(ctx, config.center_text_color);
+  graphics_context_set_text_color(ctx, center_text_color());
   graphics_draw_text(ctx, name, s_date_font,
     GRect(0, -4, bounds.size.w, bounds.size.h),
     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -543,12 +677,17 @@ static void weekday_update_proc(Layer *layer, GContext *ctx) {
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
   (void)layer;
-  draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_W, BATTERY_ICON_H), config.center_text_color);
+  GColor icon_col = center_text_color();
+  draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_W, BATTERY_ICON_H), icon_col);
 
   int fill_w = ((BATTERY_BODY_W - 4) * battery_level) / 100;
+#ifdef PBL_COLOR
   GColor fill_color = battery_is_charging   ? GColorGreen
                     : (battery_level <= 20) ? GColorRed
-                    :                         config.center_text_color;
+                    :                         icon_col;
+#else
+  GColor fill_color = icon_col;
+#endif
   graphics_context_set_fill_color(ctx, fill_color);
   graphics_fill_rect(ctx, GRect(2, 2, fill_w, BATTERY_ICON_H - 4), 0, GCornerNone);
 }
@@ -583,8 +722,14 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
 
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+  // Gabbro: larger fonts for the bigger 260×260 display
+  s_number_font = fonts_get_system_font(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM);
+  s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#else
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+#endif
 
   battery_callback(battery_state_service_peek());
 

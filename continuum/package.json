@@ -7,15 +7,21 @@
   ],
   "private": true,
   "dependencies": {
-    "pebble-clay": "^1.0.4"
+    "@rebble/clay": "1.0.8"
   },
   "pebble": {
     "displayName": "Continuum",
     "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
-    "sdkVersion": "3",
+    "sdkVersion": "4",
     "enableMultiJS": true,
     "targetPlatforms": [
-      "emery"
+      "aplite",
+      "basalt",
+      "diorite",
+      "chalk",
+      "emery",
+      "flint",
+      "gabbro"
     ],
     "watchapp": {
       "watchface": true
@@ -35,7 +41,8 @@
       "BATTERY_TOGGLE",
       "THEME",
       "HIGHLIGHT_NUMBER_COLOR",
-      "BACKGROUND_COLOR"
+      "BACKGROUND_COLOR",
+      "INVERT_BW"
     ],
     "resources": {
       "media": []

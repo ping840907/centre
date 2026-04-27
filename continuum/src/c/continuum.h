@@ -23,6 +23,7 @@ typedef struct {
   bool animation_toggle;
   bool inertia_toggle;
   bool battery_toggle;
+  bool invert_bw;  // B&W platforms: swap black/white scheme
 } WatchConfig;
 
 extern WatchConfig config;
@@ -42,3 +43,4 @@ extern RingDef rings[4];
 
 // Math utilities
 GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle);
+GPoint get_point_on_circle(int radius, int32_t angle);
