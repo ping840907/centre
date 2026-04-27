@@ -722,7 +722,7 @@ static void main_window_load(Window *window) {
 
 #if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
   // Gabbro: larger fonts for the bigger 260×260 display
-  s_number_font = fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS);
+  s_number_font = fonts_get_system_font(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM);
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 #else
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
