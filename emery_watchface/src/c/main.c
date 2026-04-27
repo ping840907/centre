@@ -182,6 +182,7 @@ void init_default_config() {
   config.highlight_position   = POS_RIGHT;
   config.animation_toggle     = true;
   config.inertia_toggle       = true;
+  config.battery_toggle       = true;
 }
 
 // FIX: persist config across app restarts
@@ -351,6 +352,30 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
 static void update_time(void);
 
+static void reposition_center_layers(void) {
+  Layer *window_layer = window_get_root_layer(s_main_window);
+  GRect bounds = layer_get_bounds(window_layer);
+  GPoint center = grect_center_point(&bounds);
+  int step = CENTER_ITEM_H + CENTER_SPACING;
+
+  int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H
+                                           : 2 * step + CENTER_ITEM_H;
+  int start_y = center.y - total_height / 2;
+
+  GRect f;
+  f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
+  f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
+  f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
+
+  if (config.battery_toggle) {
+    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3 * step; layer_set_frame(s_battery_layer, f);
+    layer_set_hidden(s_battery_layer, false);
+    layer_mark_dirty(s_battery_layer);
+  } else {
+    layer_set_hidden(s_battery_layer, true);
+  }
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   Tuple *t = dict_read_first(iterator);
   while (t != NULL) {
@@ -366,15 +391,16 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_POSITION)   config.highlight_position   = atoi(t->value->cstring);
     else if (t->key == MESSAGE_KEY_ANIMATION_TOGGLE)     config.animation_toggle     = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
+    else if (t->key == MESSAGE_KEY_BATTERY_TOGGLE)       config.battery_toggle       = t->value->int32 == 1;
     t = dict_read_next(iterator);
   }
 
   save_config();
+  reposition_center_layers();
   layer_mark_dirty(s_canvas_layer);
   layer_mark_dirty(s_month_layer);
   layer_mark_dirty(s_day_layer);
   layer_mark_dirty(s_weekday_layer);
-  layer_mark_dirty(s_battery_layer);
   update_time();
 }
 
@@ -522,26 +548,23 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
 
-  int total_height = CENTER_ITEM_H * 4 + CENTER_SPACING * 3;
-  int start_y = center.y - total_height / 2;
-  int step    = CENTER_ITEM_H + CENTER_SPACING;
-
-  s_month_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y, CENTER_ITEM_W, CENTER_ITEM_H));
-  layer_set_clips(s_month_layer, true);
-  layer_set_update_proc(s_month_layer, month_update_proc);
-  layer_add_child(s_canvas_layer, s_month_layer);
-
-  s_day_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + step, CENTER_ITEM_W, CENTER_ITEM_H));
-  layer_set_clips(s_day_layer, true);
-  layer_set_update_proc(s_day_layer, day_update_proc);
-  layer_add_child(s_canvas_layer, s_day_layer);
-
-  s_weekday_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + 2 * step, CENTER_ITEM_W, CENTER_ITEM_H));
+  // Create layers with correct x/width; y positions set by reposition_center_layers()
+  s_weekday_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, 0, CENTER_ITEM_W, CENTER_ITEM_H));
   layer_set_clips(s_weekday_layer, true);
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_battery_layer = layer_create(GRect(center.x - BATTERY_BODY_W / 2, start_y + 3 * step, BATTERY_ICON_W, BATTERY_ICON_H));
+  s_month_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, 0, CENTER_ITEM_W, CENTER_ITEM_H));
+  layer_set_clips(s_month_layer, true);
+  layer_set_update_proc(s_month_layer, month_update_proc);
+  layer_add_child(s_canvas_layer, s_month_layer);
+
+  s_day_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, 0, CENTER_ITEM_W, CENTER_ITEM_H));
+  layer_set_clips(s_day_layer, true);
+  layer_set_update_proc(s_day_layer, day_update_proc);
+  layer_add_child(s_canvas_layer, s_day_layer);
+
+  s_battery_layer = layer_create(GRect(center.x - BATTERY_BODY_W / 2, 0, BATTERY_ICON_W, BATTERY_ICON_H));
   layer_set_clips(s_battery_layer, true);
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
@@ -563,6 +586,7 @@ static void main_window_load(Window *window) {
   anim_min_tens_angle  = 0;
   anim_min_ones_angle  = 0;
 
+  reposition_center_layers();
   update_time();
 }
 

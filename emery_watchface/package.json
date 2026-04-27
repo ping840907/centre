@@ -32,6 +32,7 @@
       "HIGHLIGHT_POSITION",
       "ANIMATION_TOGGLE",
       "INERTIA_TOGGLE",
+      "BATTERY_TOGGLE",
       "THEME",
       "HIGHLIGHT_NUMBER_COLOR"
     ],

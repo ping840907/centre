@@ -21,6 +21,7 @@ typedef struct {
   int highlight_position;
   bool animation_toggle;
   bool inertia_toggle;
+  bool battery_toggle;
 } WatchConfig;
 
 extern WatchConfig config;

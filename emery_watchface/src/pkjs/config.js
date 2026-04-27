@@ -127,6 +127,12 @@ module.exports = [
         "messageKey": "INERTIA_TOGGLE",
         "label": "Inertia Effect",
         "defaultValue": true
+      },
+      {
+        "type": "toggle",
+        "messageKey": "BATTERY_TOGGLE",
+        "label": "Show Battery Indicator",
+        "defaultValue": true
       }
     ]
   },
