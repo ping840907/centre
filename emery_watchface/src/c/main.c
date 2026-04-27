@@ -200,6 +200,15 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   angle = angle % TRIG_MAX_ANGLE;
   if (angle < 0) angle += TRIG_MAX_ANGLE;
 
+  // Snap exact cardinal angles to the geometric midpoints of each side.
+  // The π≈3.14 perimeter approximation shifts the 1/4- and 3/4-perimeter
+  // positions by 1 px on smaller rings (0 & 1) but not on larger ones (2 & 3),
+  // producing a visible misalignment whenever the highlight sits at those angles.
+  if (angle == 0)                        return GPoint(0,    -h/2);
+  if (angle == TRIG_MAX_ANGLE / 4)       return GPoint(w/2,  0);
+  if (angle == TRIG_MAX_ANGLE / 2)       return GPoint(0,     h/2);
+  if (angle == 3 * TRIG_MAX_ANGLE / 4)  return GPoint(-w/2, 0);
+
   int str_h = w - 2*r;
   int str_v = h - 2*r;
   int approx_perimeter = 2 * str_h + 2 * str_v + (314 * 2 * r) / 100;
