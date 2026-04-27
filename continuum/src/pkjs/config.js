@@ -1,7 +1,7 @@
 module.exports = [
   {
     "type": "heading",
-    "defaultValue": "Emery Watchface Configuration"
+    "defaultValue": "Continuum Configuration"
   },
   {
     "type": "section",
@@ -31,6 +31,12 @@ module.exports = [
       {
         "type": "heading",
         "defaultValue": "Colors"
+      },
+      {
+        "type": "color",
+        "messageKey": "BACKGROUND_COLOR",
+        "defaultValue": "0x000000",
+        "label": "Background Color"
       },
       {
         "type": "color",

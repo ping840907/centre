@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "emery_watchface.h"
+#include "continuum.h"
 
 // Persist storage key
 #define PERSIST_KEY_CONFIG    1
@@ -179,6 +179,7 @@ void init_default_config() {
   config.number_color         = GColorLightGray;
   config.center_text_color    = GColorWhite;
   config.highlight_number_color = GColorWhite;
+  config.background_color     = GColorBlack;
   config.highlight_position   = POS_RIGHT;
   config.animation_toggle     = true;
   config.inertia_toggle       = true;
@@ -322,6 +323,9 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
 
+  graphics_context_set_fill_color(ctx, config.background_color);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
   graphics_context_set_stroke_width(ctx, 1);
   graphics_context_set_stroke_color(ctx, config.line_color);
 
@@ -397,6 +401,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_NUMBER_COLOR)         config.number_color         = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_CENTER_TEXT_COLOR)    config.center_text_color    = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_NUMBER_COLOR) config.highlight_number_color = GColorFromHEX(t->value->int32);
+    else if (t->key == MESSAGE_KEY_BACKGROUND_COLOR)      config.background_color     = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_POSITION)   config.highlight_position   = atoi(t->value->cstring);
     else if (t->key == MESSAGE_KEY_ANIMATION_TOGGLE)     config.animation_toggle     = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
