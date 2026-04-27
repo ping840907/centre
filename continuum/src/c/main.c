@@ -8,24 +8,45 @@
 #define ANIM_DURATION_MS      500
 #define ANIM_DELAY_STEP_MS    150
 
-// Drawing constants
+// Drawing constants — scaled per platform
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+// Gabbro (260×260): ~1.3× scale-up from the Emery/Chalk baseline
+#define HIGHLIGHT_BOX_SIZE    28
+#define NUMBER_TEXT_W         28
+#define NUMBER_TEXT_H         30
+#define NUMBER_TEXT_OFF_X     14
+#define NUMBER_TEXT_OFF_Y     15
+#define CENTER_ITEM_W         68
+#define CENTER_ITEM_H         24
+#define CENTER_SPACING         2
+#define BATTERY_ICON_W        34
+#define BATTERY_ICON_H        16
+#elif PBL_DISPLAY_WIDTH == 144
+// Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
 #define HIGHLIGHT_BOX_SIZE    21
 #define NUMBER_TEXT_W         21
 #define NUMBER_TEXT_H         21
 #define NUMBER_TEXT_OFF_X     10
 #define NUMBER_TEXT_OFF_Y     10
-
-// Center info panel layout
-#if PBL_DISPLAY_WIDTH == 144
 #define CENTER_ITEM_W         40
-#else
-#define CENTER_ITEM_W         50
-#endif
 #define CENTER_ITEM_H         18
 #define CENTER_SPACING         2
-#define BATTERY_ICON_W        26   // narrower than CENTER_ITEM_W to clear inner-ring digits
-#define BATTERY_BODY_W        (BATTERY_ICON_W - 3)  // body only, excluding the nub
-#define BATTERY_ICON_H        12   // shorter than CENTER_ITEM_H; no text inside
+#define BATTERY_ICON_W        26
+#define BATTERY_ICON_H        12
+#else
+// Chalk (180×180) / Emery (200×228): original sizes
+#define HIGHLIGHT_BOX_SIZE    21
+#define NUMBER_TEXT_W         21
+#define NUMBER_TEXT_H         21
+#define NUMBER_TEXT_OFF_X     10
+#define NUMBER_TEXT_OFF_Y     10
+#define CENTER_ITEM_W         50
+#define CENTER_ITEM_H         18
+#define CENTER_SPACING         2
+#define BATTERY_ICON_W        26
+#define BATTERY_ICON_H        12
+#endif
+#define BATTERY_BODY_W  (BATTERY_ICON_W - 3)  // body only, excluding the nub
 
 WatchConfig config;
 
@@ -699,8 +720,14 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
 
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+  // Gabbro: larger fonts for the bigger 260×260 display
+  s_number_font = fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS);
+  s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#else
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+#endif
 
   battery_callback(battery_state_service_peek());
 
