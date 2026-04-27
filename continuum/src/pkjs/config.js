@@ -139,6 +139,13 @@ module.exports = [
         "messageKey": "BATTERY_TOGGLE",
         "label": "Show Battery Indicator",
         "defaultValue": true
+      },
+      {
+        "type": "toggle",
+        "messageKey": "INVERT_BW",
+        "label": "Invert B&W (white background)",
+        "defaultValue": false,
+        "description": "Aplite/Diorite only: swap to white background with black text and borders."
       }
     ]
   },

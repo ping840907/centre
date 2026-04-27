@@ -15,6 +15,9 @@
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
+      "aplite",
+      "diorite",
+      "chalk",
       "emery"
     ],
     "watchapp": {
@@ -35,7 +38,8 @@
       "BATTERY_TOGGLE",
       "THEME",
       "HIGHLIGHT_NUMBER_COLOR",
-      "BACKGROUND_COLOR"
+      "BACKGROUND_COLOR",
+      "INVERT_BW"
     ],
     "resources": {
       "media": []
