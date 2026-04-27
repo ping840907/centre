@@ -6,7 +6,9 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "pebble-clay": "1.0.6"
+  },
   "pebble": {
     "displayName": "Continuum",
     "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
@@ -18,6 +20,7 @@
       "diorite",
       "chalk",
       "emery",
+      "flint",
       "gabbro"
     ],
     "watchapp": {
