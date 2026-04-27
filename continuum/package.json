@@ -7,7 +7,7 @@
   ],
   "private": true,
   "dependencies": {
-    "@rebble/clay": "pebble-dev/clay"
+    "@rebble/clay": "1.0.8"
   },
   "pebble": {
     "displayName": "Continuum",
