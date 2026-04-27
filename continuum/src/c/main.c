@@ -9,7 +9,7 @@
 #define ANIM_DELAY_STEP_MS    150
 
 // Drawing constants — scaled per platform
-#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+#if PBL_DISPLAY_WIDTH >= 200
 // Gabbro (260×260): ~1.3× scale-up from the Emery/Chalk baseline
 #define HIGHLIGHT_BOX_SIZE    21
 #define NUMBER_TEXT_W         21
@@ -21,7 +21,7 @@
 #define CENTER_SPACING         2
 #define BATTERY_ICON_W        26
 #define BATTERY_ICON_H        12
-#elif PBL_DISPLAY_WIDTH == 144
+#else
 // Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
 #define HIGHLIGHT_BOX_SIZE    15
 #define NUMBER_TEXT_W         15
@@ -33,18 +33,6 @@
 #define CENTER_SPACING         0
 #define BATTERY_ICON_W        18
 #define BATTERY_ICON_H         8
-#else
-// Chalk (180×180) / Emery (200×228): original sizes
-#define HIGHLIGHT_BOX_SIZE    21
-#define NUMBER_TEXT_W         21
-#define NUMBER_TEXT_H         21
-#define NUMBER_TEXT_OFF_X     10
-#define NUMBER_TEXT_OFF_Y     10
-#define CENTER_ITEM_W         50
-#define CENTER_ITEM_H         18
-#define CENTER_SPACING         2
-#define BATTERY_ICON_W        26
-#define BATTERY_ICON_H        12
 #endif
 #define BATTERY_BODY_W  (BATTERY_ICON_W - 3)  // body only, excluding the nub
 
