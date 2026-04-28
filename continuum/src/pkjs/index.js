@@ -12,9 +12,11 @@ Pebble.addEventListener('webviewclosed', function (e) {
     return;
   }
   var dict = clay.getSettings(e.response);
+  var messageKeys = require('message_keys');
+
 
   // Theme overrides
-  var theme = parseInt(dict['THEME'] || dict[Pebble.Enums.THEME] || 0);
+  var theme = parseInt(dict['THEME'] || dict[messageKeys.THEME] || 0);
   if (theme > 0) {
     var themes = {
       1: { // Ocean Blue
@@ -59,7 +61,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
         // dict returned by clay.getSettings() (which uses numeric keys), rather
         // than adding a separate string-keyed duplicate that may be ignored or
         // sent twice.
-        var numericKey = Pebble.Enums[key];
+        var numericKey = messageKeys[key];
         if (numericKey !== undefined) {
           dict[numericKey] = parseInt(selectedTheme[key]);
         } else {
@@ -70,7 +72,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
   }
 
   // THEME is a JS-only selector; the watch has no handler for it.
-  var themeKey = Pebble.Enums['THEME'];
+  var themeKey = messageKeys['THEME'];
   if (themeKey !== undefined) {
     delete dict[themeKey];
   }
