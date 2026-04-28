@@ -26,8 +26,8 @@
 #define HIGHLIGHT_BOX_SIZE    15
 #define NUMBER_TEXT_W         15
 #define NUMBER_TEXT_H         15
-#define NUMBER_TEXT_OFF_X     8
-#define NUMBER_TEXT_OFF_Y     10
+#define NUMBER_TEXT_OFF_X     7
+#define NUMBER_TEXT_OFF_Y     8
 #define CENTER_ITEM_W         36
 #define CENTER_ITEM_H         16
 #define CENTER_SPACING         0
@@ -35,6 +35,15 @@
 #define BATTERY_ICON_H         8
 #endif
 #define BATTERY_BODY_W  (BATTERY_ICON_W - 3)  // body only, excluding the nub
+
+// Width of the combined month+day layer on circular screens
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH >= 200
+#define CENTER_MONTHDAY_W  100
+#elif defined(PBL_ROUND)
+#define CENTER_MONTHDAY_W   72
+#else
+#define CENTER_MONTHDAY_W   CENTER_ITEM_W
+#endif
 
 WatchConfig config;
 
@@ -456,8 +465,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 #ifdef PBL_ROUND
     GPoint pt = get_point_on_circle(rings[i].width / 2, target_angle);
     GPoint hl_center = GPoint(center.x + pt.x, center.y + pt.y);
-    graphics_fill_circle(ctx, hl_center, HIGHLIGHT_BOX_SIZE / 2);
-    graphics_draw_circle(ctx, hl_center, HIGHLIGHT_BOX_SIZE / 2);
+    GRect hl_r = GRect(hl_center.x - HIGHLIGHT_BOX_SIZE / 2,
+                       hl_center.y - HIGHLIGHT_BOX_SIZE / 2,
+                       HIGHLIGHT_BOX_SIZE, HIGHLIGHT_BOX_SIZE);
+    graphics_fill_rect(ctx, hl_r, 0, GCornerNone);
+    graphics_draw_rect(ctx, hl_r);
 #else
     GPoint pt = get_point_on_rounded_rect(rings[i].width, rings[i].height,
                                           rings[i].corner_radius, target_angle);
@@ -483,11 +495,29 @@ static void reposition_center_layers(void) {
   GPoint center = grect_center_point(&bounds);
   int step = CENTER_ITEM_H + CENTER_SPACING;
 
+  GRect f;
+#ifdef PBL_ROUND
+  // Circular screens: 3-line layout — weekday / month+day / battery
+  int total_height = config.battery_toggle ? 2 * step + BATTERY_ICON_H
+                                           : step + CENTER_ITEM_H;
+  int start_y = center.y - total_height / 2;
+
+  f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;        layer_set_frame(s_weekday_layer, f);
+  f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step; layer_set_frame(s_month_layer, f);
+  layer_set_hidden(s_day_layer, true);
+
+  if (config.battery_toggle) {
+    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 2 * step; layer_set_frame(s_battery_layer, f);
+    layer_set_hidden(s_battery_layer, false);
+    layer_mark_dirty(s_battery_layer);
+  } else {
+    layer_set_hidden(s_battery_layer, true);
+  }
+#else
   int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H
                                            : 2 * step + CENTER_ITEM_H;
   int start_y = center.y - total_height / 2;
 
-  GRect f;
   f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
   f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
   f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
@@ -499,6 +529,7 @@ static void reposition_center_layers(void) {
   } else {
     layer_set_hidden(s_battery_layer, true);
   }
+#endif
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
@@ -596,7 +627,11 @@ static void update_time(void) {
   }
 
   if (month_changed)   layer_mark_dirty(s_month_layer);
+#ifdef PBL_ROUND
+  if (day_changed)     layer_mark_dirty(s_month_layer);  // month+day combined in month_layer
+#else
   if (day_changed)     layer_mark_dirty(s_day_layer);
+#endif
   if (weekday_changed) layer_mark_dirty(s_weekday_layer);
 }
 
@@ -638,11 +673,18 @@ static GColor center_text_color(void) {
 
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  const char *name = MONTH_NAMES[(current_month - 1) % 12];
   graphics_context_set_text_color(ctx, center_text_color());
-  graphics_draw_text(ctx, name, s_date_font,
+#ifdef PBL_ROUND
+  char buf[8];
+  snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
+  graphics_draw_text(ctx, buf, s_date_font,
     GRect(0, -4, bounds.size.w, bounds.size.h),
     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+#else
+  graphics_draw_text(ctx, MONTH_NAMES[(current_month - 1) % 12], s_date_font,
+    GRect(0, -4, bounds.size.w, bounds.size.h),
+    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+#endif
 }
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
@@ -695,7 +737,7 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_month_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, 0, CENTER_ITEM_W, CENTER_ITEM_H));
+  s_month_layer = layer_create(GRect(center.x - CENTER_MONTHDAY_W / 2, 0, CENTER_MONTHDAY_W, CENTER_ITEM_H));
   layer_set_clips(s_month_layer, true);
   layer_set_update_proc(s_month_layer, month_update_proc);
   layer_add_child(s_canvas_layer, s_month_layer);
