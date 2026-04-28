@@ -53,7 +53,7 @@ WatchConfig config;
 #if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
 // Gabbro: outer r=110 keeps number glyphs (28×30 px, off=14/15) inside 260 px screen
 RingDef rings[4] = {
-  { .width = 120,  .height = 120,  .corner_radius = 36,  .num_items = 3 },
+  { .width = 120, .height = 120, .corner_radius = 36,  .num_items = 3 },
   { .width = 160, .height = 160, .corner_radius = 60,  .num_items = 10 },
   { .width = 200, .height = 200, .corner_radius = 86,  .num_items = 6 },
   { .width = 240, .height = 240, .corner_radius = 110, .num_items = 10 }
@@ -62,7 +62,7 @@ RingDef rings[4] = {
 // Chalk: outer r=76 keeps number glyphs (21×21 px, off=10) inside 180 px screen
 RingDef rings[4] = {
   { .width = 82,  .height = 82,  .corner_radius = 24, .num_items = 3 },
-  { .width = 110, .height = 110,  .corner_radius = 46, .num_items = 10 },
+  { .width = 110, .height = 110, .corner_radius = 46, .num_items = 10 },
   { .width = 138, .height = 138, .corner_radius = 62, .num_items = 6 },
   { .width = 166, .height = 166, .corner_radius = 76, .num_items = 10 }
 };
