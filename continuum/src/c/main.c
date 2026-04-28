@@ -10,7 +10,6 @@
 
 // Drawing constants — scaled per platform
 #if PBL_DISPLAY_WIDTH >= 200
-// Gabbro (260×260): ~1.3× scale-up from the Emery/Chalk baseline
 #define HIGHLIGHT_BOX_SIZE    21
 #define NUMBER_TEXT_W         21
 #define NUMBER_TEXT_H         21
@@ -22,7 +21,6 @@
 #define BATTERY_ICON_W        26
 #define BATTERY_ICON_H        12
 #else
-// Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
 #define HIGHLIGHT_BOX_SIZE    15
 #define NUMBER_TEXT_W         15
 #define NUMBER_TEXT_H         15
