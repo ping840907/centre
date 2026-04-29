@@ -1,8 +1,10 @@
 # Continuum
 
-A watch face for the Pebble Emery smartwatch. Time is displayed as four concentric rounded rectangles — each ring rotates to show one digit of the current hour and minute.
+A watch face for Pebble smartwatches (supports all models including OG, Steel, Time, Time Round, 2, and Emery). Time is displayed as four concentric rounded rectangles — each ring rotates to show one digit of the current hour and minute.
 
-> **Note:** This project was developed with AI assistance (Claude by Anthropic).
+[Download on the Pebble App Store](https://apps.repebble.com/continuum_64924ceaf0c34b4fbda7a8f9)
+
+> **Note:** This project was developed with AI assistance (Claude by Anthropic, and Jules).
 
 ---
 
@@ -107,4 +109,4 @@ MIT — Copyright (c) 2026 Sloth8497. See [LICENSE](LICENSE) for the full text.
 
 ## AI Assistance
 
-This project was developed with the assistance of **Claude** (by Anthropic). The watch face logic, animation system, geometry calculations, and configuration pipeline were written collaboratively between the human author and the AI. All code has been reviewed and curated by the project author.
+This project was developed with the assistance of **Claude** (by Anthropic) and **Jules**. The watch face logic, animation system, geometry calculations, and configuration pipeline were written collaboratively between the human author and the AI. All code has been reviewed and curated by the project author.
