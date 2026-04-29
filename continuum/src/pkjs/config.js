@@ -6,6 +6,7 @@ module.exports = [
   {
     "type": "section",
     "id": "section-theme",
+    "capabilities": ["COLOR"],
     "items": [
       {
         "type": "heading",
@@ -29,6 +30,7 @@ module.exports = [
   {
     "type": "section",
     "id": "section-colors",
+    "capabilities": ["COLOR"],
     "items": [
       {
         "type": "heading",
@@ -147,7 +149,8 @@ module.exports = [
         "messageKey": "INVERT_BW",
         "label": "Invert B&W (white background)",
         "defaultValue": false,
-        "description": "Aplite/Diorite only: swap to white background with black text and borders."
+        "description": "Aplite/Diorite only: swap to white background with black text and borders.",
+        "capabilities": ["BW"]
       }
     ]
   },
