@@ -262,6 +262,14 @@ static void load_config() {
   }
 }
 
+static int32_t round_div_trig(int32_t num) {
+  if (num >= 0) {
+    return (num + TRIG_MAX_RATIO / 2) / TRIG_MAX_RATIO;
+  } else {
+    return (num - TRIG_MAX_RATIO / 2) / TRIG_MAX_RATIO;
+  }
+}
+
 GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   angle = angle % TRIG_MAX_ANGLE;
   if (angle < 0) angle += TRIG_MAX_ANGLE;
@@ -297,8 +305,8 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   if (target_dist <= current_dist + q_arc) {
     int arc_dist = target_dist - current_dist;
     int32_t arc_angle = (arc_dist * TRIG_MAX_ANGLE / 4) / q_arc;
-    x = w/2 - r + (sin_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
-    y = -h/2 + r - (cos_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
+    x = w/2 - r + round_div_trig(sin_lookup(arc_angle) * r);
+    y = -h/2 + r - round_div_trig(cos_lookup(arc_angle) * r);
     return GPoint(x, y);
   }
   current_dist += q_arc;
@@ -315,8 +323,8 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   if (target_dist <= current_dist + q_arc) {
     int arc_dist = target_dist - current_dist;
     int32_t arc_angle = TRIG_MAX_ANGLE/4 + (arc_dist * TRIG_MAX_ANGLE / 4) / q_arc;
-    x = w/2 - r + (sin_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
-    y = h/2 - r - (cos_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
+    x = w/2 - r + round_div_trig(sin_lookup(arc_angle) * r);
+    y = h/2 - r - round_div_trig(cos_lookup(arc_angle) * r);
     return GPoint(x, y);
   }
   current_dist += q_arc;
@@ -333,8 +341,8 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   if (target_dist <= current_dist + q_arc) {
     int arc_dist = target_dist - current_dist;
     int32_t arc_angle = TRIG_MAX_ANGLE/2 + (arc_dist * TRIG_MAX_ANGLE / 4) / q_arc;
-    x = -w/2 + r + (sin_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
-    y = h/2 - r - (cos_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
+    x = -w/2 + r + round_div_trig(sin_lookup(arc_angle) * r);
+    y = h/2 - r - round_div_trig(cos_lookup(arc_angle) * r);
     return GPoint(x, y);
   }
   current_dist += q_arc;
@@ -351,8 +359,8 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   if (target_dist <= current_dist + q_arc) {
     int arc_dist = target_dist - current_dist;
     int32_t arc_angle = 3*TRIG_MAX_ANGLE/4 + (arc_dist * TRIG_MAX_ANGLE / 4) / q_arc;
-    x = -w/2 + r + (sin_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
-    y = -h/2 + r - (cos_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
+    x = -w/2 + r + round_div_trig(sin_lookup(arc_angle) * r);
+    y = -h/2 + r - round_div_trig(cos_lookup(arc_angle) * r);
     return GPoint(x, y);
   }
   current_dist += q_arc;
@@ -368,8 +376,8 @@ GPoint get_point_on_circle(int radius, int32_t angle) {
   angle = angle % TRIG_MAX_ANGLE;
   if (angle < 0) angle += TRIG_MAX_ANGLE;
   return GPoint(
-    (sin_lookup(angle) * radius) / TRIG_MAX_RATIO,
-    -(cos_lookup(angle) * radius) / TRIG_MAX_RATIO
+    round_div_trig(sin_lookup(angle) * radius),
+    -round_div_trig(cos_lookup(angle) * radius)
   );
 }
 
