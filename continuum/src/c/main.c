@@ -577,7 +577,6 @@ static void reposition_center_layers(void) {
   }
 
   if (is_three_line_layout) {
-    // 三行排版：星期 / 月+日 / 電池
     int total_height = config.battery_toggle ? 2 * step + BATTERY_ICON_H : step + CENTER_ITEM_H;
     int start_y = center.y - total_height / 2;
 
@@ -593,14 +592,13 @@ static void reposition_center_layers(void) {
       layer_set_hidden(s_battery_layer, true);
     }
   } else {
-    // 四行排版：星期 / 月 / 日 / 電池
     int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H : 2 * step + CENTER_ITEM_H;
     int start_y = center.y - total_height / 2;
 
     f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
     f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
     f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
-    layer_set_hidden(s_day_layer, false); // 確保在切換回來時解除隱藏
+    layer_set_hidden(s_day_layer, false);
 
     if (config.battery_toggle) {
       f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3 * step; layer_set_frame(s_battery_layer, f);
@@ -716,7 +714,6 @@ static void update_time(void) {
   prev_day     = current_day;
   prev_weekday = current_weekday;
 
-  // 判斷排版狀態以供下方圖層更新使用
   bool is_three_line_layout = false;
 #ifdef PBL_ROUND
   is_three_line_layout = true;
@@ -725,17 +722,14 @@ static void update_time(void) {
     is_three_line_layout = true;
   }
 
-  // 根據排版狀態決定要標記重繪的圖層
   if (month_changed) {
     layer_mark_dirty(s_month_layer);
   }
 
   if (day_changed) {
     if (is_three_line_layout) {
-      // 三行排版時，日期與月份同圖層
       layer_mark_dirty(s_month_layer);
     } else {
-      // 四行排版時，日期有獨立圖層
       layer_mark_dirty(s_day_layer);
     }
   }
