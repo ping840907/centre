@@ -745,6 +745,7 @@ static void deinit(void) {
   window_destroy(s_main_window);
 }
 int main(void) {
-  init(); app_event_loop();
+  init();
+  app_event_loop();
   deinit();
 }
