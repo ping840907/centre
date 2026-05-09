@@ -95,29 +95,10 @@ static int battery_level = 100;
 
 static int32_t anim_hour_tens_angle = 0, anim_hour_ones_angle = 0;
 static int32_t anim_min_tens_angle  = 0, anim_min_ones_angle  = 0;
+static bool s_app_focused = true;
 
 // ---------------------------------------------------------------------------
-// Frame-counter-based animation system
-//
-// Progress is tracked by discrete frame count rather than wall-clock elapsed
-// time. Each app_timer fire advances exactly one frame regardless of when it
-// fires. A late timer therefore makes the animation run slightly slower rather
-// than jumping to the end — which was the wall-clock symptom.
-//
-// Lifecycle of one RingAnim slot:
-//
-//   schedule_ring_anim()
-//     ├─ cancels any pending timer
-//     ├─ stores from/to/target/layer
-//     ├─ animating = false, frame = 0
-//     └─ registers app_timer(delay_ms or 1ms)
-//
-//   ring_anim_tick() [fires after delay]
-//     ├─ animating == false → compute total_frames, set animating = true
-//     │   draw frame 0 (progress = 0), reschedule
-//     └─ animating == true  → frame++
-//         ├─ frame < total_frames → draw, reschedule
-//         └─ frame == total_frames → draw final, animating = false, done
+// Animation system
 // ---------------------------------------------------------------------------
 typedef struct {
   int32_t   from;
@@ -165,8 +146,6 @@ static void ring_anim_tick(void *data) {
   a->timer    = NULL;   // cleared first; re-set below unless completing
 
   if (!a->animating) {
-    // Delay has elapsed. Compute total_frames from the current fps setting
-    // so the user can change fps between the schedule call and the first tick.
     uint32_t fi       = frame_interval_ms();
     uint16_t tf       = (uint16_t)(ANIM_DURATION_MS / fi);
     a->total_frames   = (tf < 1) ? 1 : tf;
@@ -176,9 +155,6 @@ static void ring_anim_tick(void *data) {
     a->frame++;
   }
 
-  // Map frame index to normalized progress.
-  // frame 0            → progress 0   (start position)
-  // frame total_frames → progress MAX (end position)
   bool completing = (a->frame >= a->total_frames);
 
   AnimationProgress linear = completing
@@ -189,14 +165,11 @@ static void ring_anim_tick(void *data) {
                                ? inertia_curve(linear)
                                : ease_in_out(linear);
 
-  // (to - from) can reach 2×TRIG_MAX_ANGLE after forward-wrap guard;
-  // keep intermediate multiply in int64 to avoid overflow.
   *a->target_var = a->from + (int32_t)(
     ((int64_t)(a->to - a->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX);
   layer_mark_dirty(a->target_layer);
 
   if (completing) {
-    // Snap to exact target, normalized to [0, TRIG_MAX_ANGLE).
     int32_t final = a->to % TRIG_MAX_ANGLE;
     if (final < 0) final += TRIG_MAX_ANGLE;
     *a->target_var = final;
@@ -223,8 +196,6 @@ static void schedule_ring_anim(int idx, int32_t from, int32_t to,
   a->total_frames = 1;   // placeholder; overwritten in the first tick
   a->animating    = false;
 
-  // Use 1 ms when delay is 0 so the tick enters the app event loop
-  // rather than running synchronously inside update_time().
   a->timer = app_timer_register(delay_ms > 0 ? delay_ms : 1u,
                                 ring_anim_tick, (void*)(uintptr_t)idx);
 }
@@ -430,8 +401,6 @@ static void ring_update_proc(Layer *layer, GContext *ctx) {
     case 2: anim_angle = anim_min_tens_angle;  cur_digit = current_minute_tens; break;
     default:anim_angle = anim_min_ones_angle;  cur_digit = current_minute_ones; break;
   }
-  // timer != NULL: delay pending or mid-animation
-  // animating:     between the last reschedule and final layer_mark_dirty
   bool is_animating = s_ring_anims[idx].timer != NULL || s_ring_anims[idx].animating;
   draw_ring_numbers(ctx, center, idx, anim_angle, cur_digit, is_animating, ta);
 }
@@ -518,9 +487,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 // ---------------------------------------------------------------------------
 // Time update
 // ---------------------------------------------------------------------------
-static int32_t target_hour_tens_angle = 0, target_hour_ones_angle = 0;
-static int32_t target_min_tens_angle  = 0, target_min_ones_angle  = 0;
-
 static void update_time(void) {
   time_t tmp = time(NULL); struct tm *tk = localtime(&tmp);
 
@@ -532,15 +498,19 @@ static void update_time(void) {
   int min = tk->tm_min;
 
   static int prev_hour = -1, prev_min = -1;
-  bool changed = (hour != prev_hour || min != prev_min);
+  static bool last_focused = true;
+  bool focus_changed = (s_app_focused != last_focused);
+  last_focused = s_app_focused;
+
+  bool changed = (hour != prev_hour || min != prev_min || focus_changed);
 
   current_hour_tens = hour/10; current_hour_ones = hour%10;
   current_minute_tens = min/10; current_minute_ones = min%10;
 
-  target_hour_tens_angle = (current_hour_tens   * TRIG_MAX_ANGLE) / rings[0].num_items;
-  target_hour_ones_angle = (current_hour_ones   * TRIG_MAX_ANGLE) / rings[1].num_items;
-  target_min_tens_angle  = (current_minute_tens * TRIG_MAX_ANGLE) / rings[2].num_items;
-  target_min_ones_angle  = (current_minute_ones * TRIG_MAX_ANGLE) / rings[3].num_items;
+  int32_t target_hour_tens_angle = (current_hour_tens   * TRIG_MAX_ANGLE) / rings[0].num_items;
+  int32_t target_hour_ones_angle = (current_hour_ones   * TRIG_MAX_ANGLE) / rings[1].num_items;
+  int32_t target_min_tens_angle  = (current_minute_tens * TRIG_MAX_ANGLE) / rings[2].num_items;
+  int32_t target_min_ones_angle  = (current_minute_ones * TRIG_MAX_ANGLE) / rings[3].num_items;
 
   if (changed) {
     prev_hour = hour; prev_min = min;
@@ -550,7 +520,7 @@ static void update_time(void) {
     NORM(anim_min_tens_angle);  NORM(anim_min_ones_angle);
     #undef NORM
 
-    if (config.animation_toggle) {
+    if (config.animation_toggle && s_app_focused) {
       if (target_hour_tens_angle < anim_hour_tens_angle) target_hour_tens_angle += TRIG_MAX_ANGLE;
       if (target_hour_ones_angle < anim_hour_ones_angle) target_hour_ones_angle += TRIG_MAX_ANGLE;
       if (target_min_tens_angle  < anim_min_tens_angle)  target_min_tens_angle  += TRIG_MAX_ANGLE;
@@ -735,6 +705,24 @@ static void main_window_unload(Window *window) {
 }
 
 // ---------------------------------------------------------------------------
+// App focus
+// ---------------------------------------------------------------------------
+static void app_focus_handler(bool in_focus) {
+  s_app_focused = in_focus;
+  if (!s_app_focused) {
+    for (int i = 0; i < 4; i++) {
+      if (s_ring_anims[i].timer) {
+        app_timer_cancel(s_ring_anims[i].timer);
+        s_ring_anims[i].timer = NULL;
+      }
+      s_ring_anims[i].animating = false;
+    }
+  }
+  // Ensure the UI is updated immediately on focus change (loss or gain)
+  update_time();
+}
+
+// ---------------------------------------------------------------------------
 // App lifecycle
 // ---------------------------------------------------------------------------
 static void init(void) {
@@ -749,12 +737,15 @@ static void init(void) {
   window_stack_push(s_main_window, true);
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   battery_state_service_subscribe(battery_callback);
+  app_focus_service_subscribe(app_focus_handler);
 }
 static void deinit(void) {
+  app_focus_service_unsubscribe();
   battery_state_service_unsubscribe();
   window_destroy(s_main_window);
 }
 int main(void) {
-  init(); app_event_loop();
+  init();
+  app_event_loop();
   deinit();
 }
