@@ -550,37 +550,72 @@ static void reposition_center_layers(void) {
   int step = CENTER_ITEM_H + CENTER_SPACING;
   GRect f;
 
+bool is_three_line_layout = false;
 #ifdef PBL_ROUND
-  int total_h = config.battery_toggle ? 2*step + BATTERY_ICON_H : step + CENTER_ITEM_H;
-  int start_y = center.y - total_h / 2;
+is_three_line_layout = true;
+#endif
+
+if (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM) {
+  is_three_line_layout = true;
+}
+
+if (is_three_line_layout) {
+  // 三行排版：星期 / 月+日 / 電池
+  int total_height = config.battery_toggle ? 2 * step + BATTERY_ICON_H : step + CENTER_ITEM_H;
+  int start_y = center.y - total_height / 2;
 
   f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;        layer_set_frame(s_weekday_layer, f);
   f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step; layer_set_frame(s_month_layer, f);
   layer_set_hidden(s_day_layer, true);
 
   if (config.battery_toggle) {
-    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 2*step; layer_set_frame(s_battery_layer, f);
+    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 2 * step; layer_set_frame(s_battery_layer, f);
     layer_set_hidden(s_battery_layer, false);
     layer_mark_dirty(s_battery_layer);
   } else {
     layer_set_hidden(s_battery_layer, true);
   }
-#else
-  int total_h = config.battery_toggle ? 3*step + BATTERY_ICON_H : 2*step + CENTER_ITEM_H;
-  int start_y = center.y - total_h / 2;
+} else {
+  // 四行排版：星期 / 月 / 日 / 電池
+  int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H : 2 * step + CENTER_ITEM_H;
+  int start_y = center.y - total_height / 2;
 
   f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
   f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
-  f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2*step;   layer_set_frame(s_day_layer, f);
+  f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
+  layer_set_hidden(s_day_layer, false); // 確保在切換回來時解除隱藏
 
   if (config.battery_toggle) {
-    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3*step; layer_set_frame(s_battery_layer, f);
+    f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3 * step; layer_set_frame(s_battery_layer, f);
     layer_set_hidden(s_battery_layer, false);
     layer_mark_dirty(s_battery_layer);
   } else {
     layer_set_hidden(s_battery_layer, true);
   }
-#endif
+}
+  } else {
+    // 4-line layout
+    int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H
+                                             : 2 * step + CENTER_ITEM_H;
+    int start_y = center.y - total_height / 2;
+
+    f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
+    f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
+
+    layer_set_hidden(s_day_layer, false);
+    f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
+
+    if (config.battery_toggle) {
+      f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3 * step; layer_set_frame(s_battery_layer, f);
+      layer_set_hidden(s_battery_layer, false);
+      layer_mark_dirty(s_battery_layer);
+    } else {
+      layer_set_hidden(s_battery_layer, true);
+    }
+  }
+  layer_mark_dirty(s_weekday_layer);
+  layer_mark_dirty(s_month_layer);
+  layer_mark_dirty(s_day_layer);
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
@@ -683,12 +718,39 @@ static void update_time(void) {
   prev_day     = current_day;
   prev_weekday = current_weekday;
 
-  if (month_changed)   layer_mark_dirty(s_month_layer);
-#ifdef PBL_ROUND
-  if (day_changed)     layer_mark_dirty(s_month_layer);
-#else
-  if (day_changed)     layer_mark_dirty(s_day_layer);
-#endif
+if (config.animation_toggle) {
+  // 確保目標角度是向前推進的 (不倒轉)
+  if (target_min_ones_angle  < anim_min_ones_angle)  target_min_ones_angle  += TRIG_MAX_ANGLE;
+  if (target_min_tens_angle  < anim_min_tens_angle)  target_min_tens_angle  += TRIG_MAX_ANGLE;
+  if (target_hour_ones_angle < anim_hour_ones_angle) target_hour_ones_angle += TRIG_MAX_ANGLE;
+  if (target_hour_tens_angle < anim_hour_tens_angle) target_hour_tens_angle += TRIG_MAX_ANGLE;
+
+  schedule_ring_anim(&s_hour_tens_anim, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, 0);
+  schedule_ring_anim(&s_hour_ones_anim, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, ANIM_DELAY_STEP_MS);
+  schedule_ring_anim(&s_min_tens_anim,  anim_min_tens_angle,  target_min_tens_angle,  &anim_min_tens_angle,  ANIM_DELAY_STEP_MS * 2);
+  schedule_ring_anim(&s_min_ones_anim,  anim_min_ones_angle,  target_min_ones_angle,  &anim_min_ones_angle,  ANIM_DELAY_STEP_MS * 3);
+} else {
+  anim_hour_tens_angle = target_hour_tens_angle;
+  anim_hour_ones_angle = target_hour_ones_angle;
+  anim_min_tens_angle  = target_min_tens_angle;
+  anim_min_ones_angle  = target_min_ones_angle;
+  layer_mark_dirty(s_canvas_layer);
+}
+
+// 根據排版狀態決定要標記重繪的圖層
+if (month_changed) {
+  layer_mark_dirty(s_month_layer);
+}
+
+if (day_changed) {
+  if (is_three_line_layout) {
+    // 三行排版時，日期與月份同圖層
+    layer_mark_dirty(s_month_layer);
+  } else {
+    // 四行排版時，日期有獨立圖層
+    layer_mark_dirty(s_day_layer);
+  }
+}
   if (weekday_changed) layer_mark_dirty(s_weekday_layer);
 }
 
@@ -730,17 +792,26 @@ static GColor center_text_color(void) {
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   graphics_context_set_text_color(ctx, center_text_color());
+
+  bool is_three_line_layout = false;
 #ifdef PBL_ROUND
-  char buf[8];
-  snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
-  graphics_draw_text(ctx, buf, s_date_font,
-    GRect(0, -4, bounds.size.w, bounds.size.h),
-    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-#else
-  graphics_draw_text(ctx, MONTH_NAMES[(current_month - 1) % 12], s_date_font,
-    GRect(0, -4, bounds.size.w, bounds.size.h),
-    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  is_three_line_layout = true;
 #endif
+  if (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM) {
+    is_three_line_layout = true;
+  }
+
+  if (is_three_line_layout) {
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
+    graphics_draw_text(ctx, buf, s_date_font,
+      GRect(0, -4, bounds.size.w, bounds.size.h),
+      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  } else {
+    graphics_draw_text(ctx, MONTH_NAMES[(current_month - 1) % 12], s_date_font,
+      GRect(0, -4, bounds.size.w, bounds.size.h),
+      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 }
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
