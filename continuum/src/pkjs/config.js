@@ -133,6 +133,16 @@ module.exports = [
         "defaultValue": true
       },
       {
+        "type": "slider",
+        "messageKey": "ANIM_FPS",
+        "defaultValue": 30,
+        "label": "Animation FPS",
+        "description": "Adjust the animation frames per second (10-30). Lower FPS can save battery.",
+        "min": 10,
+        "max": 30,
+        "step": 1
+      },
+      {
         "type": "toggle",
         "messageKey": "INERTIA_TOGGLE",
         "label": "Inertia Effect",

@@ -20,6 +20,7 @@ typedef struct {
   GColor highlight_number_color;
   GColor background_color;
   int highlight_position;
+  int anim_fps;
   bool animation_toggle;
   bool inertia_toggle;
   bool battery_toggle;

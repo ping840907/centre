@@ -29,7 +29,8 @@
             "THEME",
             "HIGHLIGHT_NUMBER_COLOR",
             "BACKGROUND_COLOR",
-            "INVERT_BW"
+            "INVERT_BW",
+            "ANIM_FPS"
         ],
         "projectType": "native",
         "resources": {
