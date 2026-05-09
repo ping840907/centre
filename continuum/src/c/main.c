@@ -536,6 +536,8 @@ static void reposition_center_layers(void) {
 
     f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
     f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
+
+    layer_set_hidden(s_day_layer, false);
     f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
 
     if (config.battery_toggle) {
@@ -546,6 +548,9 @@ static void reposition_center_layers(void) {
       layer_set_hidden(s_battery_layer, true);
     }
   }
+  layer_mark_dirty(s_weekday_layer);
+  layer_mark_dirty(s_month_layer);
+  layer_mark_dirty(s_day_layer);
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
