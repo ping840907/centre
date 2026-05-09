@@ -88,7 +88,6 @@ static Layer *s_month_layer;
 static Layer *s_day_layer;
 static Layer *s_weekday_layer;
 static Layer *s_battery_layer;
-static char s_day_buffer[4];
 
 static const char *const MONTH_NAMES[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -503,75 +502,50 @@ static void reposition_center_layers(void) {
   int step = CENTER_ITEM_H + CENTER_SPACING;
 
   GRect f;
-  bool battery_horizontal = config.battery_toggle && (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM);
 
+  bool is_three_line_layout = false;
 #ifdef PBL_ROUND
-  // Circular screens: 3-line layout — weekday / month+day / battery
-  int total_height = (config.battery_toggle && !battery_horizontal) ? 2 * step + BATTERY_ICON_H
-                                           : step + CENTER_ITEM_H;
-  int start_y = center.y - total_height / 2;
-
-  f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;        layer_set_frame(s_weekday_layer, f);
-  f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step; layer_set_frame(s_month_layer, f);
-  layer_set_hidden(s_day_layer, true);
-
-  if (config.battery_toggle) {
-    f = layer_get_frame(s_battery_layer);
-    if (battery_horizontal) {
-      char buf[16];
-      snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
-      GSize text_size = graphics_text_layout_get_content_size(buf, s_date_font, GRect(0, 0, bounds.size.w, CENTER_ITEM_H), GTextOverflowModeWordWrap, GTextAlignmentCenter);
-
-      f.size.w = BATTERY_ICON_H;
-      f.size.h = BATTERY_ICON_W;
-
-      // Center battery body vertically with text, adjusting for 3px top nub
-      f.origin.y = start_y + step + (CENTER_ITEM_H - (f.size.h - 3)) / 2 - 3;
-      f.origin.x = center.x + text_size.w / 2 + 4;
-    } else {
-      f.size.w = BATTERY_ICON_W;
-      f.size.h = BATTERY_ICON_H;
-      f.origin.y = start_y + 2 * step;
-      f.origin.x = center.x - BATTERY_BODY_W / 2;
-    }
-    layer_set_frame(s_battery_layer, f);
-    layer_set_hidden(s_battery_layer, false);
-    layer_mark_dirty(s_battery_layer);
-  } else {
-    layer_set_hidden(s_battery_layer, true);
-  }
-#else
-  int total_height = (config.battery_toggle && !battery_horizontal) ? 3 * step + BATTERY_ICON_H
-                                           : 2 * step + CENTER_ITEM_H;
-  int start_y = center.y - total_height / 2;
-
-  f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
-  f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
-  f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
-
-  if (config.battery_toggle) {
-    f = layer_get_frame(s_battery_layer);
-    if (battery_horizontal) {
-      GSize text_size = graphics_text_layout_get_content_size(s_day_buffer, s_date_font, GRect(0, 0, bounds.size.w, CENTER_ITEM_H), GTextOverflowModeWordWrap, GTextAlignmentCenter);
-
-      f.size.w = BATTERY_ICON_H;
-      f.size.h = BATTERY_ICON_W;
-      // Center battery body vertically with text, adjusting for 3px top nub
-      f.origin.y = start_y + 2 * step + (CENTER_ITEM_H - (f.size.h - 3)) / 2 - 3;
-      f.origin.x = center.x + text_size.w / 2 + 4;
-    } else {
-      f.size.w = BATTERY_ICON_W;
-      f.size.h = BATTERY_ICON_H;
-      f.origin.y = start_y + 3 * step;
-      f.origin.x = center.x - BATTERY_BODY_W / 2;
-    }
-    layer_set_frame(s_battery_layer, f);
-    layer_set_hidden(s_battery_layer, false);
-    layer_mark_dirty(s_battery_layer);
-  } else {
-    layer_set_hidden(s_battery_layer, true);
-  }
+  is_three_line_layout = true;
 #endif
+  if (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM) {
+    is_three_line_layout = true;
+  }
+
+  if (is_three_line_layout) {
+    // 3-line layout — weekday / month+day / battery
+    int total_height = config.battery_toggle ? 2 * step + BATTERY_ICON_H
+                                             : step + CENTER_ITEM_H;
+    int start_y = center.y - total_height / 2;
+
+    f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;        layer_set_frame(s_weekday_layer, f);
+    f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step; layer_set_frame(s_month_layer, f);
+    layer_set_hidden(s_day_layer, true);
+
+    if (config.battery_toggle) {
+      f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 2 * step; layer_set_frame(s_battery_layer, f);
+      layer_set_hidden(s_battery_layer, false);
+      layer_mark_dirty(s_battery_layer);
+    } else {
+      layer_set_hidden(s_battery_layer, true);
+    }
+  } else {
+    // 4-line layout
+    int total_height = config.battery_toggle ? 3 * step + BATTERY_ICON_H
+                                             : 2 * step + CENTER_ITEM_H;
+    int start_y = center.y - total_height / 2;
+
+    f = layer_get_frame(s_weekday_layer); f.origin.y = start_y;            layer_set_frame(s_weekday_layer, f);
+    f = layer_get_frame(s_month_layer);   f.origin.y = start_y + step;     layer_set_frame(s_month_layer, f);
+    f = layer_get_frame(s_day_layer);     f.origin.y = start_y + 2 * step; layer_set_frame(s_day_layer, f);
+
+    if (config.battery_toggle) {
+      f = layer_get_frame(s_battery_layer); f.origin.y = start_y + 3 * step; layer_set_frame(s_battery_layer, f);
+      layer_set_hidden(s_battery_layer, false);
+      layer_mark_dirty(s_battery_layer);
+    } else {
+      layer_set_hidden(s_battery_layer, true);
+    }
+  }
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
@@ -668,15 +642,15 @@ static void update_time(void) {
     layer_mark_dirty(s_canvas_layer);
   }
 
-  if (month_changed)   layer_mark_dirty(s_month_layer);
-#ifdef PBL_ROUND
-  if (day_changed)     layer_mark_dirty(s_month_layer);  // month+day combined in month_layer
-#else
-  if (day_changed)     layer_mark_dirty(s_day_layer);
-#endif
+  if (month_changed) layer_mark_dirty(s_month_layer);
+  if (day_changed) {
+    layer_mark_dirty(s_month_layer);
+    layer_mark_dirty(s_day_layer);
+  }
   if (weekday_changed) layer_mark_dirty(s_weekday_layer);
 }
 
+static char s_day_buffer[4];
 static bool battery_is_charging = false;
 
 static void battery_callback(BatteryChargeState state) {
@@ -690,23 +664,17 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (current_day != tick_time->tm_mday) {
     current_day = tick_time->tm_mday;
     snprintf(s_day_buffer, sizeof(s_day_buffer), "%d", current_day);
-    reposition_center_layers();
   }
   current_weekday = tick_time->tm_wday;
   update_time();
 }
 
-static void draw_battery_icon(GContext *ctx, GRect rect, GColor color, bool rotate) {
+static void draw_battery_icon(GContext *ctx, GRect rect, GColor color) {
   graphics_context_set_stroke_color(ctx, color);
-  if (rotate) {
-    graphics_draw_rect(ctx, GRect(rect.origin.x, rect.origin.y + 3, rect.size.w, rect.size.h - 3));
-    graphics_context_set_fill_color(ctx, color);
-    graphics_fill_rect(ctx, GRect(rect.origin.x + rect.size.w/4, rect.origin.y, rect.size.w/2, 3), 0, GCornerNone);
-  } else {
-    graphics_draw_rect(ctx, GRect(rect.origin.x, rect.origin.y, rect.size.w - 3, rect.size.h));
-    graphics_context_set_fill_color(ctx, color);
-    graphics_fill_rect(ctx, GRect(rect.origin.x + rect.size.w - 3, rect.origin.y + rect.size.h/4, 3, rect.size.h/2), 0, GCornerNone);
-  }
+  graphics_draw_rect(ctx, GRect(rect.origin.x, rect.origin.y, rect.size.w - 3, rect.size.h));
+  graphics_context_set_fill_color(ctx, color);
+  graphics_fill_rect(ctx, GRect(rect.origin.x + rect.size.w - 3,
+                                 rect.origin.y + rect.size.h/4, 3, rect.size.h/2), 0, GCornerNone);
 }
 
 // Returns effective text/icon color for center panel (B&W ignores config.center_text_color)
@@ -721,17 +689,26 @@ static GColor center_text_color(void) {
 static void month_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   graphics_context_set_text_color(ctx, center_text_color());
+
+  bool is_three_line_layout = false;
 #ifdef PBL_ROUND
-  char buf[16];
-  snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
-  graphics_draw_text(ctx, buf, s_date_font,
-    GRect(0, -4, bounds.size.w, bounds.size.h),
-    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-#else
-  graphics_draw_text(ctx, MONTH_NAMES[(current_month - 1) % 12], s_date_font,
-    GRect(0, -4, bounds.size.w, bounds.size.h),
-    GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  is_three_line_layout = true;
 #endif
+  if (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM) {
+    is_three_line_layout = true;
+  }
+
+  if (is_three_line_layout) {
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
+    graphics_draw_text(ctx, buf, s_date_font,
+      GRect(0, -4, bounds.size.w, bounds.size.h),
+      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  } else {
+    graphics_draw_text(ctx, MONTH_NAMES[(current_month - 1) % 12], s_date_font,
+      GRect(0, -4, bounds.size.w, bounds.size.h),
+      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 }
 
 static void day_update_proc(Layer *layer, GContext *ctx) {
@@ -755,29 +732,18 @@ static void weekday_update_proc(Layer *layer, GContext *ctx) {
 static void battery_update_proc(Layer *layer, GContext *ctx) {
   (void)layer;
   GColor icon_col = center_text_color();
-  bool rotate = (config.highlight_position == POS_TOP || config.highlight_position == POS_BOTTOM);
+  draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_W, BATTERY_ICON_H), icon_col);
 
-  if (rotate) {
-    draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_H, BATTERY_ICON_W), icon_col, rotate);
-    int fill_h = ((BATTERY_BODY_W - 4) * battery_level) / 100;
+  int fill_w = ((BATTERY_BODY_W - 4) * battery_level) / 100;
 #ifdef PBL_COLOR
-    GColor fill_color = battery_is_charging   ? GColorGreen : (battery_level <= 20) ? GColorRed : icon_col;
+  GColor fill_color = battery_is_charging   ? GColorGreen
+                    : (battery_level <= 20) ? GColorRed
+                    :                         icon_col;
 #else
-    GColor fill_color = icon_col;
+  GColor fill_color = icon_col;
 #endif
-    graphics_context_set_fill_color(ctx, fill_color);
-    graphics_fill_rect(ctx, GRect(2, 2 + (BATTERY_BODY_W - 4) - fill_h + 3, BATTERY_ICON_H - 4, fill_h), 0, GCornerNone);
-  } else {
-    draw_battery_icon(ctx, GRect(0, 0, BATTERY_ICON_W, BATTERY_ICON_H), icon_col, rotate);
-    int fill_w = ((BATTERY_BODY_W - 4) * battery_level) / 100;
-#ifdef PBL_COLOR
-    GColor fill_color = battery_is_charging   ? GColorGreen : (battery_level <= 20) ? GColorRed : icon_col;
-#else
-    GColor fill_color = icon_col;
-#endif
-    graphics_context_set_fill_color(ctx, fill_color);
-    graphics_fill_rect(ctx, GRect(2, 2, fill_w, BATTERY_ICON_H - 4), 0, GCornerNone);
-  }
+  graphics_context_set_fill_color(ctx, fill_color);
+  graphics_fill_rect(ctx, GRect(2, 2, fill_w, BATTERY_ICON_H - 4), 0, GCornerNone);
 }
 
 static void main_window_load(Window *window) {
