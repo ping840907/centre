@@ -7,7 +7,7 @@
 // Animation constants
 #define ANIM_DURATION_MS      500
 #define ANIM_DELAY_STEP_MS    150
-#define ANIM_RENDER_FPS       15
+#define ANIM_RENDER_FPS       30
 #define ANIM_FRAME_INTERVAL_MS (1000 / ANIM_RENDER_FPS)
 
 static const char *const DIGIT_STRINGS[] = {
