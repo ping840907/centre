@@ -185,8 +185,8 @@ module.exports = function(minified) {
     var itemW = 36 * S;
     var startY = CY - (3 * step + batH) / 2;
 
-    // Background boxes so text is legible over any ring colour
-    ctx.fillStyle = c.BACKGROUND_COLOR;
+    // Background boxes use inner ring colour (same as Pebble TextLayer background)
+    ctx.fillStyle = c.INNER_RING_COLOR;
     for (var k = 0; k < 3; k++) {
       ctx.fillRect(CX - itemW / 2, startY + k * step, itemW, step);
     }
